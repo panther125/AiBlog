@@ -897,6 +897,10 @@ function disableAnimation() {
 			},
 			animated: true,
 			dragToClose: true,
+			// 点击背景关闭，点击图片不关闭
+			closeButton: "top",
+			click: false,
+			dblclick: "toggleZoom",
 			keyboard: {
 				Escape: "close",
 				Delete: "close",
