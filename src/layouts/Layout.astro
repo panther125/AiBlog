@@ -857,9 +857,9 @@ function disableAnimation() {
 	// 图片灯箱按需加载
 	async function initFancybox() {
 		const albumImagesSelector =
-			".custom-md img, #post-cover img, .moment-images img";
-		const albumLinksSelector = ".moment-images a[data-fancybox]";
-		const singleFancyboxSelector = "[data-fancybox]:not(.moment-images a)";
+			".custom-md img, #post-cover img, .moment-images img, .photo-gallery img";
+		const albumLinksSelector = ".moment-images a[data-fancybox], .photo-gallery a[data-fancybox]";
+		const singleFancyboxSelector = "[data-fancybox]:not(.moment-images a):not(.photo-gallery a)";
 
 		const hasImages =
 			document.querySelector(albumImagesSelector) ||
@@ -874,9 +874,8 @@ function disableAnimation() {
 			await import("@fancyapps/ui/dist/fancybox/fancybox.css");
 		}
 
-		if (fancyboxSelectors.length > 0) {
-			return; // 已经初始化，直接返回
-		}
+		// 清理之前的绑定，确保每次都能重新绑定到新页面的元素
+		cleanupFancybox();
 
 		const commonConfig = {
 			Thumbs: { autoStart: true, showOnStart: "yes" },
@@ -919,7 +918,23 @@ function disableAnimation() {
 			caption: false,
 		};
 
-		// 绑定相册/文章图片
+		// 绑定相册页面的图片链接（有 data-fancybox 的 a 标签）
+		Fancybox.bind(albumLinksSelector, {
+			...commonConfig,
+			source: (el: any) => {
+				const dataSrc = el.getAttribute("data-src");
+				const href = el.getAttribute("href");
+				// 优先使用 data-src，如果 href 是 javascript:void(0) 则忽略
+				if (dataSrc) return dataSrc;
+				if (href && !href.startsWith('javascript:')) return href;
+				// 如果都没有，尝试从内部的 img 标签获取
+				const img = el.querySelector('img');
+				return img ? img.src : '';
+			},
+		});
+		fancyboxSelectors.push(albumLinksSelector);
+
+		// 绑定文章页面的图片（直接点击图片）
 		Fancybox.bind(albumImagesSelector, {
 			...commonConfig,
 			groupAll: true,
@@ -929,14 +944,6 @@ function disableAnimation() {
 			},
 		});
 		fancyboxSelectors.push(albumImagesSelector);
-
-		Fancybox.bind(albumLinksSelector, {
-			...commonConfig,
-			source: (el: any) => {
-				return el.getAttribute("data-src") || el.getAttribute("href");
-			},
-		});
-		fancyboxSelectors.push(albumLinksSelector);
 
 		// 绑定单独的 fancybox 图片
 		Fancybox.bind(singleFancyboxSelector, commonConfig);
