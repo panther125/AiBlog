@@ -4,8 +4,6 @@ import { render } from "astro:content";
 import { Icon } from "astro-icon/components";
 import { getFileDirFromPath, getTagUrl, getPostUrl } from "@/utils/url-utils";
 import { siteConfig } from "../config";
-import I18nKey from "../i18n/i18nKey";
-import { i18n } from "../i18n/translation";
 import ImageWrapper from "./misc/ImageWrapper.astro";
 import PostMetadata from "./PostMeta.astro";
 
@@ -121,7 +119,7 @@ const { remarkPluginFrontmatter } = await render(entry);
 						</a>
 					))
 				) : (
-					<span class="text-xs text-50">{i18n(I18nKey.noTags)}</span>
+					<span class="text-xs text-50">No tags</span>
 				)
 			}
 		</div>

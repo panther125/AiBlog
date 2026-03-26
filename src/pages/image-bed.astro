@@ -1,0 +1,246 @@
+---
+import { siteConfig } from "../config";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { scanAlbums } from "../utils/imagebed-scanner";
+
+// 检查图床页面是否启用
+if (!siteConfig.featurePages.imageBed) {
+	return Astro.redirect("/404/");
+}
+
+// 获取所有图片（从相册数据中）
+const albumsData = await scanAlbums();
+const allImages = albumsData.flatMap((album) =>
+	album.photos.map((photo) => ({
+		...photo,
+		albumId: album.id,
+		albumTitle: album.title,
+	}))
+);
+
+---
+
+<MainGridLayout title="Image Bed" description="本地图片存储与展示">
+	<!-- 引入右侧边栏布局管理器 -->
+	<script>
+		import('../scripts/right-sidebar-layout.js');
+	</script>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<!-- 页面标题 -->
+			<header class="mb-8">
+				<h1
+					class="text-3xl font-bold text-90 mb-3 relative before:w-1 before:h-8 before:rounded-md before:bg-(--primary) before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4"
+				>
+					Image Bed
+				</h1>
+				<p class="text-60">
+					本地图片存储与展示 - 共 {allImages.length} 张图片
+				</p>
+			</header>
+
+			<!-- 搜索和过滤 -->
+			<div class="mb-6 flex flex-wrap gap-4">
+				<div class="flex-1 min-w-64">
+					<input
+						type="text"
+						id="image-search"
+						placeholder="搜索图片名称..."
+						class="w-full px-4 py-2 rounded-lg border border-(--line-divider) bg-(--card-bg) text-90 focus:outline-none focus:ring-2 focus:ring-(--primary)"
+					/>
+				</div>
+				<select
+					id="album-filter"
+					class="px-4 py-2 rounded-lg border border-(--line-divider) bg-(--card-bg) text-90 focus:outline-none focus:ring-2 focus:ring-(--primary)"
+				>
+					<option value="all">全部相册</option>
+					{albumsData.map((album) => (
+						<option value={album.id}>{album.title}</option>
+					))}
+				</select>
+			</div>
+
+			<!-- 图片网格 -->
+			<div
+				id="image-grid"
+				class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
+			>
+				{allImages.map((image) => (
+					<div
+						class="image-card group relative bg-(--card-bg) rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-(--line-divider)"
+						data-album={image.albumId}
+						data-title={image.alt || image.title}
+					>
+						<!-- 图片预览 -->
+						<div class="aspect-square overflow-hidden bg-black/5 dark:bg-white/5">
+							<img
+								src={image.src}
+								alt={image.alt || image.title}
+								class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+								loading="lazy"
+								onclick={() => copyImageUrl(image.src)}
+								title="点击复制图片链接"
+							/>
+						</div>
+
+						<!-- 图片信息 -->
+						<div class="p-3">
+							<h3
+								class="font-medium text-sm text-90 truncate mb-1"
+								title={image.alt || image.title}
+							>
+								{image.alt || image.title}
+							</h3>
+							<p class="text-xs text-50 truncate">{image.albumTitle}</p>
+
+							<!-- 复制按钮 -->
+							<button
+								class="mt-2 w-full py-1.5 px-3 rounded text-xs bg-(--primary)/10 hover:bg-(--primary)/20 text-(--primary) transition-colors flex items-center justify-center gap-1"
+								onclick={(e) => {
+									e.stopPropagation();
+									copyImageUrl(image.src);
+								}}
+							>
+								<svg
+									class="w-3 h-3"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+									></path>
+								</svg>
+								复制链接
+							</button>
+						</div>
+					</div>
+				))}
+			</div>
+
+			<!-- 空状态 -->
+			{allImages.length === 0 && (
+				<div class="text-center py-12">
+					<div class="text-50 mb-4">
+						<svg
+							class="w-16 h-16 mx-auto"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="1"
+								d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+							></path>
+						</svg>
+					</div>
+					<h3 class="text-lg font-medium text-90 mb-2">暂无图片</h3>
+					<p class="text-60">上传图片后将在这里展示</p>
+				</div>
+			)}
+		</div>
+	</div>
+</MainGridLayout>
+
+<script>
+	// 搜索和过滤功能
+	function initImageBed() {
+		const searchInput = document.getElementById('image-search');
+		const albumFilter = document.getElementById('album-filter');
+		const imageGrid = document.getElementById('image-grid');
+
+		if (!searchInput || !albumFilter || !imageGrid) return;
+
+		function filterImages() {
+			const searchTerm = searchInput.value.toLowerCase();
+			const selectedAlbum = albumFilter.value;
+			const cards = imageGrid.querySelectorAll('.image-card');
+
+			cards.forEach(card => {
+				const album = card.getAttribute('data-album');
+				const title = (card.getAttribute('data-title') || '').toLowerCase();
+
+				const matchesSearch = !searchTerm || title.includes(searchTerm);
+				const matchesAlbum = selectedAlbum === 'all' || album === selectedAlbum;
+
+				if (matchesSearch && matchesAlbum) {
+					card.style.display = '';
+				} else {
+					card.style.display = 'none';
+				}
+			});
+		}
+
+		searchInput.addEventListener('input', filterImages);
+		albumFilter.addEventListener('change', filterImages);
+	}
+
+	// 复制图片 URL 函数
+	function copyImageUrl(src) {
+		// 如果是本地路径，转换为完整 URL
+		const fullUrl = src.startsWith('http') ? src : `${window.location.origin}${src}`;
+		
+		navigator.clipboard.writeText(fullUrl).then(() => {
+			// 显示复制成功提示
+			const toast = document.createElement('div');
+			toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+			toast.textContent = '链接已复制！';
+			document.body.appendChild(toast);
+			
+			setTimeout(() => {
+				toast.remove();
+			}, 2000);
+		}).catch(err => {
+			console.error('复制失败:', err);
+			alert('复制失败，请手动复制');
+		});
+	}
+
+	// DOM 加载完成后初始化
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initImageBed);
+	} else {
+		initImageBed();
+	}
+</script>
+
+<style>
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.image-card {
+		animation: fadeInUp 0.3s ease-out;
+	}
+
+	.image-card:hover {
+		transform: translateY(-2px);
+	}
+
+	.animate-fade-in {
+		animation: fadeIn 0.3s ease-out;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+</style>
