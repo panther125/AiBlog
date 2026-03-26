@@ -1,6 +1,6 @@
 /* Fancybox 自定义样式 */
 .fancybox__container {
-  --fancybox-bg: rgba(0, 0, 0, 0.75);
+  --fancybox-bg: rgba(0, 0, 0, 0.85);
   --fancybox-thumbs-width: 64px;
   --fancybox-thumbs-ratio: 1;
   --fancybox-thumbs-border-radius: 4px;
@@ -8,32 +8,33 @@
 
 /* 背景虚化毛玻璃效果 */
 .fancybox__backdrop {
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.85) !important;
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 /* 图片居中显示 */
 .fancybox__carousel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .fancybox__slide {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   padding: 2rem;
 }
 
 /* 图片容器样式 */
 .fancybox__content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   max-width: 90vw;
   max-height: 85vh;
+  margin: 0 auto !important;
 }
 
 .fancybox__content img {
@@ -54,11 +55,34 @@
   cursor: default;
 }
 
+/* 工具栏样式 */
 .fancybox__toolbar {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent) !important;
   padding: 12px 16px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* 工具栏按钮 */
+.f-carousel__toolbar .f-button {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-radius: 50% !important;
+  width: 44px !important;
+  height: 44px !important;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.f-carousel__toolbar .f-button:hover {
+  background: rgba(0, 0, 0, 0.7) !important;
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.f-carousel__toolbar .f-button svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  color: white !important;
 }
 
 .fancybox__caption {
@@ -168,3 +192,4 @@
     --fancybox-thumbs-width: 40px;
   }
 }
+

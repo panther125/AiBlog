@@ -118,9 +118,7 @@ export const siteConfig: SiteConfig = {
 	banner: {
 		// 支持单张图片或图片数组，当数组长度 > 1 时自动启用轮播
 		src: {
-			desktop: [
-				"assets/images/cat.png",
-			], // 桌面横幅图片
+			desktop: ["assets/images/cat.png"], // 桌面横幅图片
 			mobile: [
 				"/assets/mobile-banner/1.webp",
 				"/assets/mobile-banner/2.webp",
@@ -258,6 +256,11 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Archive,
 		// 支持自定义导航栏链接，支持多级菜单
 		{
+			name: "资讯",
+			url: "/daily-news/",
+			icon: "material-symbols:newspaper",
+		},
+		{
 			name: "链接",
 			url: "/links/",
 			icon: "material-symbols:link",
@@ -273,7 +276,7 @@ export const navBarConfig: NavBarConfig = {
 					url: "https://space.bilibili.com/322993153",
 					external: true,
 					icon: "fa7-brands:bilibili",
-				}
+				},
 			],
 		},
 		{
@@ -353,7 +356,7 @@ export const profileConfig: ProfileConfig = {
 			name: "Bilibili",
 			icon: "fa7-brands:bilibili",
 			url: "https://space.bilibili.com/322993153",
-		}
+		},
 	],
 };
 
@@ -614,3 +617,4 @@ export const widgetConfigs = {
 } as const;
 
 // umamiConfig相关配置已移动至astro.config.mjs中,统计脚本请自行在Layout.astro文件的<head>中插入
+
