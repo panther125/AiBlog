@@ -19,10 +19,10 @@
 			"@assets/*": ["src/assets/*"],
 			"@constants/*": ["src/constants/*"],
 			"@utils/*": ["src/utils/*"],
-			"@i18n/*": ["src/i18n/*"],
 			"@layouts/*": ["src/layouts/*"],
 			"@/*": ["src/*"]
 		}
 	},
 	"include": ["src/**/*"]
 }
+

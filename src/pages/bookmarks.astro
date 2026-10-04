@@ -1,0 +1,936 @@
+---
+import { siteConfig } from "../config";
+import {
+	bookmarksData,
+	getBookmarkCategories,
+	getBookmarkSearchText,
+} from "../data/bookmarks";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// 检查链接收藏页面是否启用
+if (!siteConfig.featurePages.bookmarks) {
+	return Astro.redirect("/404/");
+}
+
+const categories = getBookmarkCategories();
+const title = "链接收藏";
+const subtitle = "我收藏的优质网站与工具导航";
+---
+
+<MainGridLayout title={title} description={subtitle}>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<!-- 页面标题 -->
+			<div class="flex flex-col items-start justify-center mb-6">
+				<h1 class="text-4xl font-bold text-90 mb-2 relative
+					before:w-1 before:h-8 before:rounded-md before:bg-(--primary)
+					before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4">
+					链接收藏
+				</h1>
+				<p class="text-lg text-60">我收藏的优质网站与工具导航</p>
+			</div>
+
+			<!-- 搜索导航栏（核心 UI） -->
+			<div class="sticky top-20 z-20 mb-5">
+				<div class="flex items-center gap-3 rounded-(--radius-large) bg-(--card-bg) border border-(--line-divider)
+					px-4 py-3 shadow-sm transition-colors focus-within:border-(--primary)">
+					<iconify-icon icon="material-symbols:search" class="text-2xl text-60 shrink-0"></iconify-icon>
+					<input
+						id="bm-search"
+						type="text"
+						placeholder="搜索网站名称、拼音首字母或描述…（按 / 聚焦）"
+						class="flex-1 bg-transparent outline-none text-90 placeholder:text-40 text-base min-w-0"
+						autocomplete="off"
+					/>
+					<kbd id="bm-kbd" class="bm-kbd hidden sm:inline-block">/</kbd>
+					<button id="bm-clear" class="text-60 hover:text-90 shrink-0 transition-colors" aria-label="清除搜索" title="清除">
+						<iconify-icon icon="material-symbols:close" class="text-xl"></iconify-icon>
+					</button>
+				</div>
+			</div>
+
+			<!-- 结果计数 + 管理操作 -->
+			<div class="flex flex-wrap items-center justify-between gap-3 mb-4 pl-1">
+				<div id="bm-count" class="text-sm text-60"></div>
+				<div class="flex items-center gap-2">
+					<button id="bm-add-btn" class="bm-action" title="添加新链接">
+						<iconify-icon icon="material-symbols:add" class="text-lg"></iconify-icon>
+						添加链接
+					</button>
+					<button id="bm-reset-btn" class="bm-action" title="恢复为站点内置的默认收藏">
+						<iconify-icon icon="material-symbols:restart-alt" class="text-lg"></iconify-icon>
+						恢复默认
+					</button>
+				</div>
+			</div>
+
+			<!-- 分类筛选 chips -->
+			<div id="bm-filters" class="flex flex-wrap gap-2 mb-6">
+				<button data-cat="all" data-active="true" class="bm-chip">全部</button>
+				{
+					categories.map((c) => (
+						<button data-cat={c} data-active="false" class="bm-chip">
+							{c}
+						</button>
+					))
+				}
+			</div>
+
+			<!-- 链接卡片网格 -->
+			<div id="bm-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				{
+					bookmarksData.map((b) => (
+						<div
+							class="bm-card group relative rounded-(--radius-large) border border-(--line-divider) bg-(--card-bg)
+								hover:shadow-lg hover:border-(--primary) transition-all duration-300"
+							data-search={getBookmarkSearchText(b)}
+							data-category={b.category}
+							data-id={b.id}
+							data-source="builtin"
+						>
+							<a href={b.url} target="_blank" rel="noopener noreferrer" class="block">
+								<div class="flex items-start gap-3 p-4 pr-11">
+									<div class="bm-icon flex items-center justify-center w-11 h-11 rounded-xl
+										bg-(--primary)/10 text-(--primary) text-2xl shrink-0
+										group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+										<iconify-icon icon={b.icon || "mdi:link"}></iconify-icon>
+									</div>
+									<div class="flex-1 min-w-0">
+										<h3 class="text-base font-semibold text-90 truncate group-hover:text-(--primary) transition-colors">
+											{b.title}
+										</h3>
+										<p class="text-60 text-sm mt-1 line-clamp-2 leading-relaxed">
+											{b.description}
+										</p>
+										<span class="bm-domain inline-block mt-2 text-40 text-xs truncate max-w-full">
+											{b.url.replace(/^https?:\/\//, "")}
+										</span>
+									</div>
+									<iconify-icon
+										icon="material-symbols:arrow-outward"
+										class="text-lg text-40 shrink-0 group-hover:text-(--primary) transition-colors self-center"
+									></iconify-icon>
+								</div>
+							</a>
+							<button
+								class="bm-del"
+								data-del={b.id}
+								aria-label={"删除链接 " + b.title}
+								title="删除此链接"
+							>
+								<iconify-icon icon="material-symbols:delete-outline" class="text-base"></iconify-icon>
+							</button>
+						</div>
+					))
+				}
+			</div>
+
+			<!-- 空状态 -->
+			<div id="bm-empty" class="hidden text-center text-60 py-16">
+				<iconify-icon icon="material-symbols:search-off" class="text-5xl text-40 block mx-auto mb-3"></iconify-icon>
+				没有找到匹配的链接，换个关键词试试～
+			</div>
+
+			<!-- 提示条 -->
+			<div id="bm-toast" class="bm-toast"></div>
+
+			<!-- 添加链接弹窗 -->
+			<div id="bm-add-modal" class="bm-modal">
+				<div class="bm-modal-mask" data-close="add"></div>
+				<div class="bm-modal-panel">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="text-xl font-bold text-90">添加链接</h3>
+						<button class="bm-icon-btn" data-close="add" aria-label="关闭">
+							<iconify-icon icon="material-symbols:close" class="text-xl"></iconify-icon>
+						</button>
+					</div>
+					<div class="space-y-3">
+						<div>
+							<label class="bm-label" for="bm-f-title">网站名称 <span class="text-red-500">*</span></label>
+							<input id="bm-f-title" class="bm-input" type="text" placeholder="例如：Figma" autocomplete="off" />
+						</div>
+						<div>
+							<label class="bm-label" for="bm-f-url">链接地址 <span class="text-red-500">*</span></label>
+							<input id="bm-f-url" class="bm-input" type="text" placeholder="https://www.figma.com/" autocomplete="off" />
+						</div>
+						<div>
+							<label class="bm-label" for="bm-f-desc">简介</label>
+							<input id="bm-f-desc" class="bm-input" type="text" placeholder="一句话说明这个网站是做什么的" autocomplete="off" />
+						</div>
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<div>
+								<label class="bm-label" for="bm-f-cat">分类</label>
+								<input id="bm-f-cat" class="bm-input" type="text" list="bm-cat-list" placeholder="开发工具" autocomplete="off" />
+								<datalist id="bm-cat-list">
+									{categories.map((c) => <option value={c}></option>)}
+								</datalist>
+							</div>
+							<div>
+								<label class="bm-label" for="bm-f-icon">图标名</label>
+								<input id="bm-f-icon" class="bm-input" type="text" placeholder="mdi:link" autocomplete="off" />
+							</div>
+						</div>
+						<div>
+							<label class="bm-label" for="bm-f-tags">标签（逗号分隔，可选）</label>
+							<input id="bm-f-tags" class="bm-input" type="text" placeholder="设计, 协作" autocomplete="off" />
+						</div>
+					</div>
+					<div class="flex items-center justify-end gap-2 mt-6">
+						<button class="bm-btn" data-close="add">取消</button>
+						<button id="bm-add-confirm" class="bm-btn bm-btn-primary">下一步：验证</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- 验证码弹窗 -->
+			<div id="bm-code-modal" class="bm-modal">
+				<div class="bm-modal-mask" data-close="code"></div>
+				<div class="bm-modal-panel bm-modal-narrow">
+					<div class="flex items-center gap-3 mb-3">
+						<div class="w-10 h-10 rounded-xl bg-(--primary)/10 text-(--primary) flex items-center justify-center text-2xl shrink-0">
+							<iconify-icon icon="material-symbols:lock"></iconify-icon>
+						</div>
+						<div class="min-w-0">
+							<h3 class="text-lg font-bold text-90">请输入验证码</h3>
+							<p id="bm-code-desc" class="text-sm text-60 truncate"></p>
+						</div>
+					</div>
+					<input
+						id="bm-code-input"
+						class="bm-input bm-code-input"
+						type="text"
+						inputmode="numeric"
+						maxlength="6"
+						autocomplete="off"
+						placeholder="6 位数字验证码"
+					/>
+					<p id="bm-code-err" class="text-sm text-red-500 mt-2 hidden">验证码错误，请重试</p>
+					<div class="flex items-center justify-end gap-2 mt-6">
+						<button class="bm-btn" data-close="code">取消</button>
+						<button id="bm-code-confirm" class="bm-btn bm-btn-primary">确认</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
+
+<style>
+	.bm-chip {
+		padding: 0.375rem 0.875rem;
+		border-radius: 9999px;
+		font-size: 0.875rem;
+		border: 1px solid var(--line-divider);
+		color: var(--text-60, #888);
+		transition: all 0.2s ease;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.bm-chip:hover {
+		border-color: var(--primary);
+		color: var(--primary);
+	}
+	.bm-chip[data-active="true"] {
+		background: var(--primary);
+		color: #fff;
+		border-color: var(--primary);
+	}
+
+	.bm-domain {
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	}
+
+	/* 搜索快捷键徽标 */
+	.bm-kbd {
+		padding: 0.125rem 0.5rem;
+		border-radius: 0.375rem;
+		font-size: 0.75rem;
+		line-height: 1.25rem;
+		border: 1px solid var(--line-divider);
+		background: rgba(127, 127, 127, 0.08);
+		color: var(--text-60, #888);
+		opacity: 0.6;
+		transition: opacity 0.2s ease;
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	}
+
+	/* 两行截断 */
+	.line-clamp-2 {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	/* 移动端搜索栏吸顶时与顶栏留出空间 */
+	@media (max-width: 1279px) {
+		.sticky.top-20 {
+			top: 4.5rem;
+		}
+	}
+
+	/* ===== 管理操作按钮 ===== */
+	.bm-action {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.875rem;
+		border-radius: 9999px;
+		font-size: 0.875rem;
+		border: 1px solid var(--line-divider, #e5e5e5);
+		color: var(--text-60, #888);
+		background: var(--card-bg, transparent);
+		transition: all 0.2s ease;
+		white-space: nowrap;
+		cursor: pointer;
+	}
+	.bm-action:hover {
+		border-color: var(--primary, #3b82f6);
+		color: var(--primary, #3b82f6);
+	}
+	.bm-action:active {
+		transform: scale(0.96);
+	}
+
+	/* 卡片右上角的删除按钮：默认隐藏，hover/focus 时显现 */
+	.bm-del {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.5rem;
+		z-index: 10;
+		width: 1.75rem;
+		height: 1.75rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 0.5rem;
+		border: 1px solid var(--line-divider, #e5e5e5);
+		background: var(--card-bg, #fff);
+		color: var(--text-50, #999);
+		opacity: 0;
+		transition: all 0.2s ease;
+		cursor: pointer;
+	}
+	.bm-card:hover .bm-del,
+	.bm-del:focus-visible {
+		opacity: 1;
+	}
+	.bm-del:hover {
+		color: #ef4444;
+		border-color: #fca5a5;
+		background: rgba(239, 68, 68, 0.08);
+	}
+	/* 触屏设备无 hover，删除按钮始终显示 */
+	@media (hover: none) {
+		.bm-del {
+			opacity: 1;
+		}
+	}
+
+	/* ===== 弹窗 ===== */
+	/* 注意：不能用 Tailwind 的 hidden 类控制显隐 —— Astro scoped 样式选择器
+	   特异性更高，会把 .hidden 的 display:none 覆盖掉，弹窗会关不掉。
+	   这里统一用 .bm-modal.open 来控制。 */
+	.bm-modal {
+		position: fixed;
+		inset: 0;
+		z-index: 9999;
+		display: none;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
+	}
+	.bm-modal.open {
+		display: flex;
+	}
+	.bm-modal-mask {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(4px);
+		animation: bm-fade 0.2s ease;
+	}
+	.bm-modal-panel {
+		position: relative;
+		z-index: 1;
+		width: 100%;
+		max-width: 34rem;
+		max-height: 88vh;
+		overflow-y: auto;
+		padding: 1.5rem;
+		border-radius: var(--radius-large, 1rem);
+		border: 1px solid var(--line-divider, #e5e5e5);
+		background: var(--card-bg, #fff);
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+		animation: bm-pop 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
+	}
+	.bm-modal-narrow {
+		max-width: 24rem;
+	}
+	@keyframes bm-fade {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	@keyframes bm-pop {
+		from {
+			opacity: 0;
+			transform: translateY(12px) scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	.bm-label {
+		display: block;
+		font-size: 0.8125rem;
+		margin-bottom: 0.375rem;
+		color: var(--text-60, #888);
+	}
+	.bm-input {
+		width: 100%;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.625rem;
+		font-size: 0.9375rem;
+		border: 1px solid var(--line-divider, #e5e5e5);
+		background: transparent;
+		color: var(--text-90, #222);
+		outline: none;
+		transition: border-color 0.2s ease;
+	}
+	.bm-input:focus {
+		border-color: var(--primary, #3b82f6);
+	}
+	.bm-code-input {
+		text-align: center;
+		font-size: 1.25rem;
+		letter-spacing: 0.5rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	}
+
+	.bm-btn {
+		padding: 0.5rem 1.125rem;
+		border-radius: 0.625rem;
+		font-size: 0.9375rem;
+		border: 1px solid var(--line-divider, #e5e5e5);
+		color: var(--text-60, #888);
+		background: transparent;
+		transition: all 0.2s ease;
+		cursor: pointer;
+	}
+	.bm-btn:hover {
+		color: var(--text-90, #222);
+		border-color: var(--text-40, #bbb);
+	}
+	.bm-btn-primary {
+		background: var(--primary, #3b82f6);
+		border-color: var(--primary, #3b82f6);
+		color: #fff;
+	}
+	.bm-btn-primary:hover {
+		opacity: 0.9;
+		color: #fff;
+	}
+
+	.bm-icon-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.5rem;
+		color: var(--text-50, #999);
+		transition: all 0.2s ease;
+		cursor: pointer;
+	}
+	.bm-icon-btn:hover {
+		background: rgba(127, 127, 127, 0.12);
+		color: var(--text-90, #222);
+	}
+
+	/* 轻提示 */
+	.bm-toast {
+		position: fixed;
+		left: 50%;
+		bottom: 2.5rem;
+		transform: translate(-50%, 1.5rem);
+		z-index: 10000;
+		padding: 0.625rem 1.25rem;
+		border-radius: 9999px;
+		font-size: 0.875rem;
+		color: #fff;
+		background: rgba(34, 34, 34, 0.92);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+		opacity: 0;
+		pointer-events: none;
+		transition: all 0.3s ease;
+	}
+	.bm-toast.show {
+		opacity: 1;
+		transform: translate(-50%, 0);
+	}
+</style>
+
+<script>
+	// 引入右侧边栏布局管理器 + 加载 Iconify 图标库
+	import("../scripts/right-sidebar-layout.js");
+	import { loadIconify } from "../utils/icon-loader";
+	loadIconify().catch((error) => {
+		console.error("Failed to load Iconify:", error);
+	});
+
+	// ===== 链接收藏：增删 / 验证码 / 本地存储 =====
+	// 说明：这是纯静态站，没有后端。增删结果保存在浏览器 localStorage，
+	// 刷新与再次访问都会保留；换浏览器/清缓存会回到站点内置的默认收藏。
+
+	// 写死的验证码
+	const VERIFY_CODE = "239218";
+	const LS_CUSTOM = "mizuki:bookmarks:custom"; // 自定义添加的链接
+	const LS_DELETED = "mizuki:bookmarks:deleted"; // 已删除的（内置）链接 id
+
+	function lsGet(key, fallback) {
+		try {
+			const raw = localStorage.getItem(key);
+			if (!raw) return fallback;
+			const val = JSON.parse(raw);
+			return Array.isArray(val) ? val : fallback;
+		} catch (e) {
+			return fallback;
+		}
+	}
+
+	function lsSet(key, val) {
+		try {
+			localStorage.setItem(key, JSON.stringify(val));
+		} catch (e) {
+			/* 隐私模式下写入失败则忽略 */
+		}
+	}
+
+	// 链接收藏：搜索 + 分类筛选 + 增删管理
+	// 注意：这里必须写纯 JS，出现 as 断言 / 泛型等 TS 语法会被 esbuild 吞掉后续代码；
+	// 需要收窄类型就用 instanceof 判断，运行时和 astro check 都认。
+	function elOf(id) {
+		const el = document.getElementById(id);
+		return el instanceof HTMLElement ? el : null;
+	}
+	function inputOf(id) {
+		const el = document.getElementById(id);
+		return el instanceof HTMLInputElement ? el : null;
+	}
+	function noop() {}
+
+	function initBookmarks() {
+		const gridEl = elOf("bm-grid");
+		const searchEl = inputOf("bm-search");
+		if (!gridEl || !searchEl) return;
+		const grid = gridEl;
+		const input = searchEl;
+
+		const clearBtn = elOf("bm-clear");
+		const filters = elOf("bm-filters");
+		const empty = elOf("bm-empty");
+		const count = elOf("bm-count");
+		const kbd = elOf("bm-kbd");
+		const toastEl = elOf("bm-toast");
+
+		const addBtn = elOf("bm-add-btn");
+		const resetBtn = elOf("bm-reset-btn");
+		const addModal = elOf("bm-add-modal");
+		const codeModal = elOf("bm-code-modal");
+		const codeInput = inputOf("bm-code-input");
+		const codeErr = elOf("bm-code-err");
+		const codeDesc = elOf("bm-code-desc");
+		const codeConfirm = elOf("bm-code-confirm");
+		const addConfirm = elOf("bm-add-confirm");
+		const fTitle = inputOf("bm-f-title");
+		const fUrl = inputOf("bm-f-url");
+		const fDesc = inputOf("bm-f-desc");
+		const fCat = inputOf("bm-f-cat");
+		const fIcon = inputOf("bm-f-icon");
+		const fTags = inputOf("bm-f-tags");
+
+		if (grid.dataset.bmInit) return; // 防止同一页面重复绑定
+		grid.dataset.bmInit = "1";
+
+		// 样式是 Astro scoped 的（选择器带 astro-cid 属性），动态新建的元素不会携带
+		// 该属性、样式会全部丢失。所以统一先缓存一份「静态节点模板」再克隆使用。
+		const firstCard = grid.querySelector(".bm-card");
+		const cardTemplate = firstCard ? firstCard.cloneNode(true) : null;
+
+		let activeCat = "all";
+		let pendingAction = noop; // 验证码通过后要执行的回调
+		let toastSeq = 0;
+
+		function toast(msg) {
+			const box = toastEl;
+			if (!box) return;
+			const seq = ++toastSeq;
+			box.textContent = msg;
+			box.classList.add("show");
+			setTimeout(() => {
+				if (seq === toastSeq) box.classList.remove("show");
+			}, 2200);
+		}
+
+		function allCards() {
+			return Array.from(grid.querySelectorAll(".bm-card"));
+		}
+
+		function applyFilter() {
+			const kw = input.value.trim().toLowerCase();
+			const cards = allCards();
+			const total = cards.length;
+			let visible = 0;
+			cards.forEach((card) => {
+				const matchCat =
+					activeCat === "all" || card.getAttribute("data-category") === activeCat;
+				const matchKw = !kw || (card.getAttribute("data-search") || "").includes(kw);
+				const show = matchCat && matchKw;
+				card.classList.toggle("hidden", !show);
+				if (show) visible++;
+			});
+			if (empty) empty.classList.toggle("hidden", visible !== 0);
+			if (count) {
+				count.textContent =
+					kw || activeCat !== "all"
+						? "找到 " + visible + " 个链接（共 " + total + " 个）"
+						: "共 " + total + " 个链接";
+			}
+		}
+
+		function searchTextOf(b) {
+			return [
+				b.title,
+				b.alias || "",
+				b.description || "",
+				b.url,
+				b.category,
+				(b.tags || []).join(" "),
+			]
+				.join(" ")
+				.toLowerCase();
+		}
+
+		function shortUrl(url) {
+			return String(url).replace(/^https?:\/\//, "");
+		}
+
+		// 用静态卡片作模板克隆出新卡片（保留 astro-cid，样式才生效）
+		function appendCard(b) {
+			if (!cardTemplate) return false;
+			const clone = cardTemplate.cloneNode(true);
+			if (!(clone instanceof HTMLElement)) return false;
+			const node = clone;
+			node.classList.remove("hidden");
+			node.dataset.search = searchTextOf(b);
+			node.dataset.category = b.category;
+			node.dataset.id = b.id;
+			node.dataset.source = "custom";
+			const a = node.querySelector("a");
+			if (a) a.setAttribute("href", b.url);
+			const icon = node.querySelector(".bm-icon iconify-icon");
+			if (icon) icon.setAttribute("icon", b.icon || "mdi:link");
+			const h3 = node.querySelector("h3");
+			if (h3) h3.textContent = b.title;
+			const p = node.querySelector("p");
+			if (p) p.textContent = b.description || "";
+			const domain = node.querySelector(".bm-domain");
+			if (domain) domain.textContent = shortUrl(b.url);
+			const del = node.querySelector(".bm-del");
+			if (del) del.setAttribute("data-del", b.id);
+			grid.appendChild(node);
+			return true;
+		}
+
+		function getCustom() {
+			return lsGet(LS_CUSTOM, []);
+		}
+		function getDeleted() {
+			return lsGet(LS_DELETED, []);
+		}
+		function markDeleted(id) {
+			const list = getDeleted();
+			if (list.indexOf(id) === -1) list.push(id);
+			lsSet(LS_DELETED, list);
+		}
+		function unmarkDeleted(id) {
+			lsSet(
+				LS_DELETED,
+				getDeleted().filter((x) => x !== id),
+			);
+		}
+
+		// 新增分类时补一个筛选 chip（同样用克隆保证 scoped 样式生效）
+		function addChip(cat) {
+			if (!filters || !cat) return;
+			const chips = filters.querySelectorAll(".bm-chip");
+			const exists = Array.from(chips).some(
+				(c) => c.getAttribute("data-cat") === cat,
+			);
+			if (exists || chips.length === 0) return;
+			const clone = chips[0].cloneNode(true);
+			if (!(clone instanceof HTMLElement)) return;
+			const chip = clone;
+			chip.dataset.cat = cat;
+			chip.dataset.active = "false";
+			chip.textContent = cat;
+			filters.appendChild(chip);
+		}
+
+		// 应用本地存储里的增删结果
+		function initLocalState() {
+			const deleted = getDeleted();
+			Array.from(
+				grid.querySelectorAll('.bm-card[data-source="builtin"]'),
+			).forEach((card) => {
+				if (deleted.indexOf(card.getAttribute("data-id")) !== -1) card.remove();
+			});
+			getCustom().forEach((b) => {
+				if (deleted.indexOf(b.id) === -1 && appendCard(b)) addChip(b.category);
+			});
+		}
+
+		function openModal(el) {
+			if (el) el.classList.add("open");
+		}
+		function closeModal(el) {
+			if (el) el.classList.remove("open");
+		}
+		function anyModalOpen() {
+			return (
+				(addModal && addModal.classList.contains("open")) ||
+				(codeModal && codeModal.classList.contains("open"))
+			);
+		}
+
+		function openCode(desc, onOk) {
+			pendingAction = onOk;
+			if (codeDesc) codeDesc.textContent = desc || "验证身份后继续操作";
+			if (codeInput) codeInput.value = "";
+			if (codeErr) codeErr.classList.add("hidden");
+			openModal(codeModal);
+			setTimeout(() => {
+				if (codeInput) codeInput.focus();
+			}, 60);
+		}
+
+		function confirmCode() {
+			if (!codeInput) return;
+			if (codeInput.value.trim() !== VERIFY_CODE) {
+				if (codeErr) codeErr.classList.remove("hidden");
+				codeInput.value = "";
+				codeInput.focus();
+				return;
+			}
+			const action = pendingAction;
+			pendingAction = noop;
+			closeModal(codeModal);
+			if (typeof action === "function") action();
+		}
+
+		// ===== 事件绑定（均使用委托，新增卡片无需重新绑定） =====
+
+		input.addEventListener("input", applyFilter);
+
+		// 清除按钮
+		if (clearBtn) {
+			clearBtn.addEventListener("click", () => {
+				input.value = "";
+				input.focus();
+				applyFilter();
+			});
+		}
+
+		// 分类筛选（委托）
+		if (filters) {
+			filters.addEventListener("click", (e) => {
+				const from = e.target instanceof Element ? e.target : null;
+				const chip = from ? from.closest(".bm-chip") : null;
+				if (!chip || !filters.contains(chip)) return;
+				activeCat = chip.getAttribute("data-cat") || "all";
+				filters
+					.querySelectorAll(".bm-chip")
+					.forEach((c) => c.setAttribute("data-active", "false"));
+				chip.setAttribute("data-active", "true");
+				applyFilter();
+			});
+		}
+
+		// 删除按钮（委托）
+		grid.addEventListener("click", (e) => {
+			const from = e.target instanceof Element ? e.target : null;
+			const btn = from ? from.closest(".bm-del") : null;
+			if (!btn || !grid.contains(btn)) return;
+			e.preventDefault();
+			e.stopPropagation();
+			const cardEl = btn.closest(".bm-card");
+			if (!(cardEl instanceof HTMLElement)) return;
+			const card = cardEl;
+			const id = card.dataset.id;
+			const h3 = card.querySelector("h3");
+			const name = h3 ? h3.textContent : "该链接";
+			openCode("删除链接「" + name + "」？", () => {
+				if (card.dataset.source === "custom") {
+					lsSet(
+						LS_CUSTOM,
+						getCustom().filter((x) => x.id !== id),
+					);
+				} else {
+					markDeleted(id);
+				}
+				card.remove();
+				toast("已删除：" + name);
+				applyFilter();
+			});
+		});
+
+		// 添加链接：打开表单
+		if (addBtn) {
+			addBtn.addEventListener("click", () => {
+				[fTitle, fUrl, fDesc, fCat, fIcon, fTags].forEach((el) => {
+					if (el) el.value = "";
+				});
+				openModal(addModal);
+				setTimeout(() => {
+					if (fTitle) fTitle.focus();
+				}, 60);
+			});
+		}
+
+		// 添加链接：表单校验后弹验证码
+		if (addConfirm) {
+			addConfirm.addEventListener("click", () => {
+				if (!fTitle || !fUrl) return;
+				const title = (fTitle.value || "").trim();
+				let url = (fUrl.value || "").trim();
+				const desc = (fDesc && fDesc.value ? fDesc.value : "").trim();
+				const cat = ((fCat && fCat.value ? fCat.value : "").trim()) || "自定义";
+				const icon = ((fIcon && fIcon.value ? fIcon.value : "").trim()) || "mdi:link";
+				const tagsRaw = fTags && fTags.value ? fTags.value : "";
+				const tags = tagsRaw.split(/[,，、\s]+/).filter(Boolean);
+				if (!title) {
+					toast("请填写网站名称");
+					fTitle.focus();
+					return;
+				}
+				if (!url) {
+					toast("请填写链接地址");
+					fUrl.focus();
+					return;
+				}
+				if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+
+				const item = {
+					id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+					title: title,
+					url: url,
+					description: desc || "自定义收藏的链接。",
+					category: cat,
+					icon: icon,
+					tags: tags,
+				};
+
+				closeModal(addModal);
+				openCode('添加链接「' + title + '」？', () => {
+					const list = getCustom();
+					list.push(item);
+					lsSet(LS_CUSTOM, list);
+					unmarkDeleted(item.id);
+					appendCard(item);
+					addChip(cat);
+					toast("已添加：" + title);
+					applyFilter();
+				});
+			});
+		}
+
+		// 验证码：确认 / 回车提交 / 输入时清除错误提示
+		if (codeConfirm) codeConfirm.addEventListener("click", confirmCode);
+		if (codeInput) {
+			codeInput.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					confirmCode();
+				}
+			});
+			codeInput.addEventListener("input", () => {
+				if (codeErr) codeErr.classList.add("hidden");
+			});
+		}
+
+		// 弹窗关闭：遮罩 / 右上角 X / 取消按钮
+		document.addEventListener("click", (e) => {
+			const from = e.target instanceof Element ? e.target : null;
+			const el = from ? from.closest("[data-close]") : null;
+			if (!el) return;
+			closeModal(el.getAttribute("data-close") === "add" ? addModal : codeModal);
+			pendingAction = noop;
+		});
+
+		// 恢复默认（同样需要验证码）
+		if (resetBtn) {
+			resetBtn.addEventListener("click", () => {
+				openCode("恢复为站点内置的默认收藏？", () => {
+					try {
+						localStorage.removeItem(LS_CUSTOM);
+						localStorage.removeItem(LS_DELETED);
+					} catch (e) {
+						/* 忽略 */
+					}
+					toast("已恢复默认收藏");
+					setTimeout(() => window.location.reload(), 700);
+				});
+			});
+		}
+
+		// 快捷键：/ 聚焦搜索，Esc 清空搜索 / 关闭弹窗
+		document.addEventListener("keydown", (e) => {
+			const key = e.key;
+			if (key === "Escape") {
+				if (codeModal && codeModal.classList.contains("open")) {
+					closeModal(codeModal);
+					pendingAction = noop;
+					return;
+				}
+				if (addModal && addModal.classList.contains("open")) {
+					closeModal(addModal);
+					pendingAction = noop;
+					return;
+				}
+			}
+			if (anyModalOpen()) return; // 弹窗打开时不抢焦点
+			if (key === "/" && document.activeElement !== input) {
+				e.preventDefault();
+				input.focus();
+				input.select();
+			} else if (key === "Escape" && document.activeElement === input) {
+				if (input.value !== "") {
+					input.value = "";
+					applyFilter();
+				} else {
+					input.blur();
+				}
+			}
+		});
+
+		// 搜索框聚焦时隐藏 kbd 提示
+		if (kbd) {
+			input.addEventListener("focus", () => kbd.classList.add("opacity-0"));
+			input.addEventListener("blur", () => kbd.classList.remove("opacity-0"));
+		}
+
+		initLocalState();
+		applyFilter();
+	}
+
+	// 首屏若已在该页则直接初始化；否则注册 swup 切换监听，进入页面后再初始化
+	if (document.readyState !== "loading") initBookmarks();
+	else document.addEventListener("DOMContentLoaded", initBookmarks);
+	document.addEventListener("swup:page:view", initBookmarks);
+</script>

@@ -1,8 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
 import { LinkPresets } from "../../constants/link-presets";
-import I18nKey from "../../i18n/i18nKey";
-import { i18n } from "../../i18n/translation";
+import { i18n, I18nKey } from "../../i18n/translation";
 import { LinkPreset, type NavBarLink } from "../../types/config";
 import { url } from "../../utils/url-utils";
 
@@ -12,13 +11,10 @@ interface Props {
 
 // 国际化标题映射
 const navTitleMap: Record<string, string> = {
-	Links: I18nKey.navLinks,
 	My: I18nKey.navMy,
 	About: I18nKey.navAbout,
 	Others: I18nKey.navOthers,
 	Anime: I18nKey.anime,
-	Diary: I18nKey.diary,
-	Gallery: I18nKey.albums,
 	Devices: I18nKey.devices,
 	Projects: I18nKey.projects,
 	Skills: I18nKey.skills,

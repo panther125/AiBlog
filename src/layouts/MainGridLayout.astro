@@ -629,7 +629,7 @@ const transparentClass = shouldEnableTransparency
                                     class:list={["block md:hidden object-cover h-full w-full transition-transform duration-500 ease-out"]}
                                     src={Array.isArray(bannerImages.mobile) ? bannerImages.mobile[index] : (typeof bannerImages.mobile === 'string' ? bannerImages.mobile : '')} 
                                     position={siteConfig.banner.position}
-                                    loading={index === 0 ? "eager" : "lazy"}
+                                    loading="lazy"
                                 />
                             )}
                             <!-- Desktop/Tablet: use desktop-specific images -->
@@ -639,7 +639,7 @@ const transparentClass = shouldEnableTransparency
                                     class:list={["hidden md:block object-cover h-full w-full transition-transform duration-500 ease-out"]}
                                     src={Array.isArray(bannerImages.desktop) ? bannerImages.desktop[index] : (typeof bannerImages.desktop === 'string' ? bannerImages.desktop : '')} 
                                     position={siteConfig.banner.position}
-                                    loading={index === 0 ? "eager" : "lazy"}
+                                    loading="lazy"
                                 />
                             )}
                         </li>

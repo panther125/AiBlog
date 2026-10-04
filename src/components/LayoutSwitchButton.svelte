@@ -1,9 +1,7 @@
-<script lang="ts">
+﻿<script lang="ts">
+import { i18n, I18nKey } from "../i18n/translation";
 import { onMount } from "svelte";
 import { siteConfig, sidebarLayoutConfig } from "../config";
-import { i18n } from "@i18n/translation";
-import I18nKey from "@i18n/i18nKey";
-
 type LayoutMode = "list" | "grid";
 
 export let currentLayout: LayoutMode = "list";

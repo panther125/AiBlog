@@ -1,6 +1,4 @@
 ---
-import I18nKey from "../../i18n/i18nKey";
-import { i18n } from "../../i18n/translation";
 import { getCategoryList } from "../../utils/content-utils";
 import { widgetManager } from "../../utils/widget-manager";
 import ButtonLink from "../control/ButtonLink.astro";
@@ -26,16 +24,24 @@ const className = Astro.props.class;
 const style = Astro.props.style;
 ---
 
-<WidgetLayout name={i18n(I18nKey.categories)} id="categories" isCollapsed={isCollapsed} collapsedHeight={COLLAPSED_HEIGHT}
-                class={className} style={style}
+<WidgetLayout
+	name="Categories"
+	id="categories"
+	isCollapsed={isCollapsed}
+	collapsedHeight={COLLAPSED_HEIGHT}
+	class={className}
+	style={style}
 >
-    {categories.map((c) =>
-        <ButtonLink
-            url={c.url}
-            badge={String(c.count)}
-            label={`View all posts in the ${c.name.trim()} category`}
-        >
-            {c.name.trim()}
-        </ButtonLink>
-    )}
+	{
+		categories.map((c) => (
+			<ButtonLink
+				url={c.url}
+				badge={String(c.count)}
+				label={`View all posts in the ${c.name.trim()} category`}
+			>
+				{c.name.trim()}
+			</ButtonLink>
+		))
+	}
 </WidgetLayout>
+

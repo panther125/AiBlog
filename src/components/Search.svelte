@@ -1,6 +1,4 @@
-<script lang="ts">
-import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
+﻿<script lang="ts">
 import Icon from "@iconify/svelte";
 import { navigateToPage } from "@utils/navigation-utils";
 import { url } from "@utils/url-utils";
@@ -234,7 +232,7 @@ onDestroy(() => {
         }}
     >
         <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none {isDesktopSearchExpanded ? 'left-3' : 'left-1/2 -translate-x-1/2'} transition top-1/2 -translate-y-1/2 {isDesktopSearchExpanded ? 'search-icon-color' : ''}"></Icon>
-        <input id="search-input-desktop" placeholder={i18n(I18nKey.search)} bind:value={keywordDesktop}
+        <input id="search-input-desktop" placeholder="Search" bind:value={keywordDesktop}
             onfocus={() => {
                 clearTimeout(blurTimer);
                 if (!isDesktopSearchExpanded) toggleDesktopSearch(); 
@@ -258,7 +256,7 @@ onDestroy(() => {
     <!-- search bar inside panel for phone/tablet -->
     <div id="search-bar-inside" class="flex relative lg:hidden transition-all items-center h-11 rounded-xl search-bar-bg">
         <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto search-icon-color"></Icon>
-        <input placeholder={i18n(I18nKey.search)} bind:value={keywordMobile}
+        <input placeholder="Search" bind:value={keywordMobile}
                class="pl-10 absolute inset-0 text-sm bg-transparent outline-0
                focus:w-60 search-input-color"
         >

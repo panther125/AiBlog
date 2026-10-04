@@ -1,4 +1,5 @@
----
+﻿---
+import { i18n, I18nKey } from "../i18n/translation";
 import { siteConfig } from "../config";
 import { UNCATEGORIZED } from "../constants/constants";
 import {
@@ -8,8 +9,6 @@ import {
 	getProjectsByCategory,
 	projectsData,
 } from "../data/projects";
-import I18nKey from "../i18n/i18nKey";
-import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 
 // import { loadIconify } from "../utils/icon-loader";
@@ -45,8 +44,8 @@ const projectsByCategory = categories.reduce(
 	{} as Record<string, typeof projectsData>,
 );
 
-const title = i18n(I18nKey.projects);
-const subtitle = i18n(I18nKey.projectsSubtitle);
+const title = "Projects";
+const subtitle = "My development projects portfolio";
 
 // 获取分类文本的国际化翻译
 const getCategoryText = (category: string) => {
@@ -60,7 +59,7 @@ const getCategoryText = (category: string) => {
 		case "other":
 			return i18n(I18nKey.projectsOther);
 		case UNCATEGORIZED:
-			return i18n(I18nKey.uncategorized);
+			return "Uncategorized";
 		default:
 			return category;
 	}
@@ -85,10 +84,10 @@ const getCategoryText = (category: string) => {
         <h1 class="text-4xl font-bold text-90 mb-2 relative
                   before:w-1 before:h-8 before:rounded-md before:bg-(--primary)
                   before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4">
-          {i18n(I18nKey.projects)}
+          Projects
         </h1>
         <p class="text-lg text-60">
-          {i18n(I18nKey.projectsSubtitle)}
+          My development projects portfolio
         </p>
       </div>
 

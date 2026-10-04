@@ -1,9 +1,8 @@
----
+﻿---
+import { i18n, I18nKey } from "../i18n/translation";
 import ImageWrapper from "../components/misc/ImageWrapper.astro";
 import { siteConfig } from "../config";
 import localAnimeList from "../data/anime";
-import I18nKey from "../i18n/i18nKey";
-import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import fs from "node:fs";
 import path from "node:path";
@@ -141,7 +140,7 @@ if (currentConfig) {
 	console.warn(`[Anime] Unknown or unconfigured mode: ${ANIME_MODE}`);
 }
 
-let emptyMessage = i18n(I18nKey.animeEmpty);
+let emptyMessage = "No anime data available";
 let emptyDescription = "";
 let showEmptyState = false;
 
@@ -171,27 +170,27 @@ if (ANIME_MODE === "bilibili" && (!BILIBILI_VMID || BILIBILI_VMID === "")) {
 const statusMap: Record<string, { text: string; class: string; icon: string }> =
 	{
 		watching: {
-			text: i18n(I18nKey.animeStatusWatching),
+			text: "Watching",
 			class: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
 			icon: "▶",
 		},
 		completed: {
-			text: i18n(I18nKey.animeStatusCompleted),
+			text: "Completed",
 			class: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
 			icon: "✓",
 		},
 		planned: {
-			text: i18n(I18nKey.animeStatusPlanned),
+			text: "Planned",
 			class: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
 			icon: "❤",
 		},
 		onhold: {
-			text: i18n(I18nKey.animeStatusOnHold),
+			text: "On Hold",
 			class: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
 			icon: "⏸",
 		},
 		dropped: {
-			text: i18n(I18nKey.animeStatusDropped),
+			text: "Dropped",
 			class: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
 			icon: "✗",
 		},
@@ -213,8 +212,8 @@ const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
 ---
 
 <MainGridLayout
-	title={i18n(I18nKey.anime)}
-	description={i18n(I18nKey.animeSubtitle)}
+	title="Anime"
+	description="Record my anime journey"
 >
 	<div
 		class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
@@ -227,10 +226,10 @@ const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
                     before:w-1 before:h-8 before:rounded-md before:bg-(--primary)
                     before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4"
 					>
-						{i18n(I18nKey.animeTitle)}
+						My Anime List
 					</h1>
 					<p class="text-75">
-						{i18n(I18nKey.animeSubtitle)}
+						Record my anime journey
 					</p>
 				</div>
 
@@ -239,16 +238,16 @@ const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
 						<button
 							class="anime-filter-tag anime-active"
 							data-status="all"
-							>{i18n(I18nKey.animeFilterAll)}</button
+							>All</button
 						>
 						<button class="anime-filter-tag" data-status="watching"
-							>{i18n(I18nKey.animeStatusWatching)}</button
+							>Watching</button
 						>
 						<button class="anime-filter-tag" data-status="planned"
-							>{i18n(I18nKey.animeStatusPlanned)}</button
+							>Planned</button
 						>
 						<button class="anime-filter-tag" data-status="completed"
-							>{i18n(I18nKey.animeStatusCompleted)}</button
+							>Completed</button
 						>
 						{
 							ANIME_MODE === "bangumi" && (
@@ -257,13 +256,13 @@ const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
 										class="anime-filter-tag"
 										data-status="onhold"
 									>
-										{i18n(I18nKey.animeStatusOnHold)}
+										On Hold
 									</button>
 									<button
 										class="anime-filter-tag"
 										data-status="dropped"
 									>
-										{i18n(I18nKey.animeStatusDropped)}
+										Dropped
 									</button>
 								</>
 							)

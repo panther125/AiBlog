@@ -1,6 +1,5 @@
----
-import I18nKey from "../../i18n/i18nKey";
-import { i18n } from "../../i18n/translation";
+﻿---
+import { i18n, I18nKey } from "../../i18n/translation";
 import Icon from "../misc/Icon.astro";
 
 export interface Props {
@@ -73,9 +72,9 @@ const getTypeColor = (type: string) => {
 const getTypeText = (type: string) => {
 	switch (type) {
 		case "education":
-			return i18n(I18nKey.timelineEducation);
+			return "Education";
 		case "work":
-			return i18n(I18nKey.timelineWork);
+			return "Work";
 		case "project":
 			return i18n(I18nKey.timelineProject);
 		case "achievement":
@@ -113,14 +112,14 @@ const getDuration = (startDate: string, endDate?: string) => {
 	const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30));
 
 	if (diffMonths < 12) {
-		return `${diffMonths} ${i18n(I18nKey.timelineMonths)}`;
+		return `${diffMonths} months`;
 	}
 	const years = Math.floor(diffMonths / 12);
 	const months = diffMonths % 12;
 	if (months === 0) {
-		return `${years} ${i18n(I18nKey.timelineYears)}`;
+		return `${years} years`;
 	}
-	return `${years} ${i18n(I18nKey.timelineYears)} ${months} ${i18n(I18nKey.timelineMonths)}`;
+	return `${years} years ${months} months`;
 };
 
 // 尺寸样式映射
@@ -205,7 +204,7 @@ const itemColor = item.color || "#3B82F6";
         <!-- 时间和地点信息 -->
         <div class={`flex items-center gap-4 mb-3 text-black/60 dark:text-white/60 ${sizeClasses.meta}`}>
           <div>
-            {formatDate(item.startDate)} - {item.endDate ? formatDate(item.endDate) : i18n(I18nKey.timelinePresent)}
+            {formatDate(item.startDate)} - {item.endDate ? formatDate(item.endDate) : "Present"}
           </div>
           <div>•</div>
           <div>{getDuration(item.startDate, item.endDate)}</div>
@@ -307,7 +306,7 @@ const itemColor = item.color || "#3B82F6";
       
       <!-- 时间信息 -->
       <div class={`text-black/70 dark:text-white/70 mb-3 ${sizeClasses.meta}`}>
-        {formatDate(item.startDate)} - {item.endDate ? formatDate(item.endDate) : i18n(I18nKey.timelinePresent)} ({getDuration(item.startDate, item.endDate)})
+        {formatDate(item.startDate)} - {item.endDate ? formatDate(item.endDate) : "Present"} ({getDuration(item.startDate, item.endDate)})
       </div>
       
       <!-- 描述 -->

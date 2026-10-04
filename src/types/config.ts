@@ -60,13 +60,11 @@ export type SiteConfig = {
 	// 特色页面开关配置
 	featurePages: {
 		anime: boolean; // 番剧页面开关
-		diary: boolean; // 日记页面开关
-		friends: boolean; // 友链页面开关
 		projects: boolean; // 项目页面开关
 		skills: boolean; // 技能页面开关
 		timeline: boolean; // 时间线页面开关
-		albums: boolean; // 相册页面开关
 		devices: boolean; // 设备页面开关
+		bookmarks: boolean; // 链接收藏页面开关
 	};
 
 	// 文章列表布局配置
@@ -198,14 +196,10 @@ export type Favicon = {
 export enum LinkPreset {
 	Home = 0,
 	Archive = 1,
-	About = 2,
-	Friends = 3,
-	Anime = 4,
-	Diary = 5,
-	Albums = 6,
-	Projects = 7,
-	Skills = 8,
-	Timeline = 9,
+	Anime = 2,
+	Projects = 4,
+	Skills = 5,
+	Timeline = 6,
 }
 
 export type NavBarLink = {
@@ -330,6 +324,9 @@ export type MusicPlayerConfig = {
 	id: string; // 歌单ID
 	server: string; // 音乐源服务器
 	type: string; // 音乐类型
+	daily_playlists?: string[]; // 每日推荐歌单池，按日期轮换取歌单
+	daily_track_count?: number; // 每日推荐取用的曲目数量
+	daily_head_size?: number; // 只在歌单前 N 首内轮换（榜单头部更新、可播率更高）
 };
 
 export type FooterConfig = {
@@ -461,3 +458,4 @@ export type PioConfig = {
 export type ShareConfig = {
 	enable: boolean; // 是否启用分享功能
 };
+

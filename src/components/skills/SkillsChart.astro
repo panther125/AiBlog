@@ -1,7 +1,5 @@
----
-import I18nKey from "../../i18n/i18nKey";
-import { i18n } from "../../i18n/translation";
-
+﻿---
+import { i18n, I18nKey } from "../../i18n/translation";
 // 计算SVG圆环路径数据的函数（Donut Chart）
 interface ChartSegment {
 	startAngle: number;
@@ -90,22 +88,22 @@ const categoryColors = {
 // 计算扇形图数据（按技能等级）
 const levelData = [
 	{
-		name: i18n(I18nKey.skillLevelExpert),
+		name: "Expert",
 		value: stats.byLevel.expert,
 		color: levelColors.expert,
 	},
 	{
-		name: i18n(I18nKey.skillLevelAdvanced),
+		name: "Advanced",
 		value: stats.byLevel.advanced,
 		color: levelColors.advanced,
 	},
 	{
-		name: i18n(I18nKey.skillLevelIntermediate),
+		name: "Intermediate",
 		value: stats.byLevel.intermediate,
 		color: levelColors.intermediate,
 	},
 	{
-		name: i18n(I18nKey.skillLevelBeginner),
+		name: "Beginner",
 		value: stats.byLevel.beginner,
 		color: levelColors.beginner,
 	},
@@ -114,27 +112,27 @@ const levelData = [
 // 计算矩形图数据（按技能分类）
 const categoryData = [
 	{
-		name: i18n(I18nKey.skillsFrontend),
+		name: "Frontend",
 		value: stats.byCategory.frontend,
 		color: categoryColors.frontend,
 	},
 	{
-		name: i18n(I18nKey.skillsBackend),
+		name: "Backend",
 		value: stats.byCategory.backend,
 		color: categoryColors.backend,
 	},
 	{
-		name: i18n(I18nKey.skillsDatabase),
+		name: "Database",
 		value: stats.byCategory.database,
 		color: categoryColors.database,
 	},
 	{
-		name: i18n(I18nKey.skillsTools),
+		name: "Tools",
 		value: stats.byCategory.tools,
 		color: categoryColors.tools,
 	},
 	{
-		name: i18n(I18nKey.skillsOther),
+		name: "Other",
 		value: stats.byCategory.other,
 		color: categoryColors.other,
 	},
@@ -201,13 +199,13 @@ const calculatePercentage = (value: number, total: number) => {
                 
                 // 根据技能等级选择对应的渐变
                 let gradientId = "";
-                if (segment.name === i18n(I18nKey.skillLevelExpert)) {
+                if (segment.name === "Expert") {
                   gradientId = "expert-gradient";
-                } else if (segment.name === i18n(I18nKey.skillLevelAdvanced)) {
+                } else if (segment.name === "Advanced") {
                   gradientId = "advanced-gradient";
-                } else if (segment.name === i18n(I18nKey.skillLevelIntermediate)) {
+                } else if (segment.name === "Intermediate") {
                   gradientId = "intermediate-gradient";
-                } else if (segment.name === i18n(I18nKey.skillLevelBeginner)) {
+                } else if (segment.name === "Beginner") {
                   gradientId = "beginner-gradient";
                 }
                 
@@ -294,13 +292,13 @@ const calculatePercentage = (value: number, total: number) => {
         <div class="grid grid-cols-2 gap-4">
           <div class="bg-blue-500/10 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-500/20 dark:border-blue-900/30">
             <div class="text-sm text-60 mb-1">
-              {i18n(I18nKey.skillExperience)}
+              Experience
             </div>
             <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {totalExperience.years}<span class="text-lg">.{totalExperience.months.toString().padStart(2, '0')}</span>
             </div>
             <div class="text-xs text-50 mt-1">
-              {i18n(I18nKey.skillYears)}
+              years
             </div>
           </div>
           
@@ -312,7 +310,7 @@ const calculatePercentage = (value: number, total: number) => {
               {stats.total}
             </div>
             <div class="text-xs text-50 mt-1">
-              {i18n(I18nKey.skills)}
+              Skills
             </div>
           </div>
         </div>

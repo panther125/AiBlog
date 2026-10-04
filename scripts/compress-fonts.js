@@ -214,6 +214,8 @@ async function fetchMetingPlaylistText() {
 		let meting_id = "14164869977";
 		let meting_server = "netease";
 		let meting_type = "playlist";
+		let daily_ids = [];
+		let daily_head_size = 0;
 
 		if (musicConfigMatch) {
 			const configStr = musicConfigMatch[1];
@@ -242,6 +244,20 @@ async function fetchMetingPlaylistText() {
 			if (typeMatch) {
 				meting_type = typeMatch[1];
 			}
+
+			// 每日推荐歌单池：播放器会按日期轮换歌单，字体子集需覆盖所有池内歌单的歌名
+			const poolMatch = configStr.match(/daily_playlists:\s*\[([^\]]*)\]/);
+			if (poolMatch) {
+				daily_ids = [...poolMatch[1].matchAll(/["']([^"']+)["']/g)].map(
+					(m) => m[1],
+				);
+			}
+
+			// 播放器只在歌单头部区间轮换，字体子集同样只需覆盖这段，避免被大歌单撑爆
+			const headMatch = configStr.match(/daily_head_size:\s*(\d+)/);
+			if (headMatch) {
+				daily_head_size = parseInt(headMatch[1], 10);
+			}
 		}
 
 		if (mode !== "meting") {
@@ -251,82 +267,90 @@ async function fetchMetingPlaylistText() {
 			return new Set();
 		}
 
-		// 构建 API URL
-		const apiUrl = meting_api
-			.replace(":server", meting_server)
-			.replace(":type", meting_type)
-			.replace(":id", meting_id)
-			.replace(":auth", "")
-			.replace(":r", Date.now().toString());
-
-		console.log("ℹ Fetching music playlist from Meting API...");
-		console.log(`  URL: ${apiUrl}`);
-
-		// 设置请求超时
-		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
-
 		const textSet = new Set();
+		const playlist_ids = [...new Set([meting_id, ...daily_ids])];
 
-		try {
-			const response = await fetch(apiUrl, {
-				signal: controller.signal,
-				headers: {
-					"User-Agent":
-						"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-				},
-			});
-			clearTimeout(timeoutId);
+		for (const playlist_id of playlist_ids) {
+			// 构建 API URL
+			const apiUrl = meting_api
+				.replace(":server", meting_server)
+				.replace(":type", meting_type)
+				.replace(":id", playlist_id)
+				.replace(":auth", "")
+				.replace(":r", Date.now().toString());
 
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
+			console.log("ℹ Fetching music playlist from Meting API...");
+			console.log(`  URL: ${apiUrl}`);
 
-			const playlist = await response.json();
+			// 设置请求超时
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
 
-			if (!Array.isArray(playlist)) {
-				throw new Error("API response is not an array");
-			}
+			try {
+				const response = await fetch(apiUrl, {
+					signal: controller.signal,
+					headers: {
+						"User-Agent":
+							"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+					},
+				});
+				clearTimeout(timeoutId);
 
-			console.log(
-				`✓ Successfully fetched ${playlist.length} songs from Meting API`,
-			);
-
-			// 提取歌曲信息中的文字
-			let songCount = 0;
-			playlist.forEach((song) => {
-				const title = song.name ?? song.title ?? "";
-				const artist = song.artist ?? song.author ?? "";
-
-				// 只处理有效的歌曲信息
-				if (title.trim() || artist.trim()) {
-					songCount++;
-
-					// 添加歌名中的字符
-					for (const char of title) {
-						textSet.add(char);
-					}
-
-					// 添加歌手名中的字符
-					for (const char of artist) {
-						textSet.add(char);
-					}
+				if (!response.ok) {
+					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 				}
-			});
-			if (songCount === 0) {
-				console.log("⚠ No valid song data found in API response");
-			}
-		} catch (fetchError) {
-			clearTimeout(timeoutId);
 
-			if (fetchError.name === "AbortError") {
+				const playlist = await response.json();
+
+				if (!Array.isArray(playlist)) {
+					throw new Error("API response is not an array");
+				}
+
 				console.log(
-					"⚠ Meting API request timeout (10s), skipping music text collection",
+					`✓ Successfully fetched ${playlist.length} songs from Meting API`,
 				);
-			} else {
-				console.log(
-					`⚠ Failed to fetch Meting API data: ${fetchError.message}, skipping music text collection`,
-				);
+
+				// 提取歌曲信息中的文字
+				let songCount = 0;
+				// 播放器只会轮换到歌单头部区间，字体子集无需覆盖整份大歌单
+				const headCount =
+					daily_head_size > 0
+						? Math.min(daily_head_size, playlist.length)
+						: playlist.length;
+				playlist.slice(0, headCount).forEach((song) => {
+					const title = song.name ?? song.title ?? "";
+					const artist = song.artist ?? song.author ?? "";
+
+					// 只处理有效的歌曲信息
+					if (title.trim() || artist.trim()) {
+						songCount++;
+
+						// 添加歌名中的字符
+						for (const char of title) {
+							textSet.add(char);
+						}
+
+						// 添加歌手名中的字符
+						for (const char of artist) {
+							textSet.add(char);
+						}
+					}
+				});
+				if (songCount === 0) {
+					console.log("⚠ No valid song data found in API response");
+				}
+			} catch (fetchError) {
+				clearTimeout(timeoutId);
+
+				if (fetchError.name === "AbortError") {
+					console.log(
+						"⚠ Meting API request timeout (10s), skipping this playlist",
+					);
+				} else {
+					console.log(
+						`⚠ Failed to fetch Meting API data: ${fetchError.message}, skipping this playlist`,
+					);
+				}
 			}
 		}
 
@@ -963,7 +987,7 @@ async function collectText() {
 	return allText;
 }
 
-// 压缩字体并输出到 dist 目录
+// 压缩字体并输出到 public/assets/font-subset
 async function compressFonts() {
 	try {
 		// 读取配置
@@ -978,19 +1002,11 @@ async function compressFonts() {
 
 		console.log(`Found ${fonts.length} font configs to compress`);
 
-		// 检查 dist 目录是否存在
-		const distDir = path.join(__dirname, "../dist");
-		if (!fs.existsSync(distDir)) {
-			console.log(
-				"⚠ dist directory does not exist, please run astro build first",
-			);
-			return;
-		}
-
-		// 创建 dist/assets/font 目录
-		const distFontDir = path.join(distDir, "assets/font");
-		if (!fs.existsSync(distFontDir)) {
-			fs.mkdirSync(distFontDir, { recursive: true });
+		// 子集字体输出到 public/assets/font-subset，astro dev 与 astro build 引用同一路径。
+		// 不能写回 public/assets/font：fontmin 会把中间产物 .ttf 覆盖到源字体上。
+		const outFontDir = path.join(__dirname, "../public/assets/font-subset");
+		if (!fs.existsSync(outFontDir)) {
+			fs.mkdirSync(outFontDir, { recursive: true });
 		}
 
 		// 根据字体类型收集不同的字符集
@@ -1032,8 +1048,8 @@ async function compressFonts() {
 					// woff/woff2 已经是 Web 优化格式，不支持进一步子集化压缩
 					console.log(`⚠ Skipping ${fontFile} (already web-optimized format)`);
 
-					// 直接复制到 dist
-					const destFile = path.join(distFontDir, fontFile);
+					// 直接复制到子集目录，保持 URL 与 main.css 的引用一致
+					const destFile = path.join(outFontDir, fontFile);
 					fs.copyFileSync(fontSrc, destFile);
 					totalCompressedSize += originalSize;
 					// 不计入处理数量
@@ -1054,7 +1070,7 @@ async function compressFonts() {
 								deflate: true,
 							}),
 						)
-						.dest(distFontDir);
+						.dest(outFontDir);
 
 					await new Promise((resolve, reject) => {
 						fontmin.run((err, files) => {
@@ -1066,8 +1082,12 @@ async function compressFonts() {
 						});
 					});
 
+					// 子集化的中间 .ttf 产物无人引用，删掉以免被打进 dist
+					const intermediateTtf = path.join(outFontDir, `${baseName}.ttf`);
+					if (fs.existsSync(intermediateTtf)) fs.rmSync(intermediateTtf);
+
 					// 检查压缩结果
-					const compressedFile = path.join(distFontDir, `${baseName}.woff2`);
+					const compressedFile = path.join(outFontDir, `${baseName}.woff2`);
 
 					if (fs.existsSync(compressedFile)) {
 						const compressedSize = fs.statSync(compressedFile).size;
@@ -1112,7 +1132,7 @@ async function compressFonts() {
 				}
 			}
 
-			process.exit(1);
+			// 不阻断构建：public/assets/font-subset 里仍有上一次的子集产物
 		}
 
 		if (processedCount > 0) {
@@ -1129,7 +1149,7 @@ async function compressFonts() {
 		}
 	} catch (error) {
 		console.error("❌ Font compression failed:", error);
-		process.exit(1);
+		// 不阻断构建：main.css 会退回上一次生成的子集字体
 	}
 }
 

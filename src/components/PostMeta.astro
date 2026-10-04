@@ -1,8 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
-import I18nKey from "../i18n/i18nKey";
-import { i18n } from "../i18n/translation";
 import { formatDateToYYYYMMDD } from "../utils/date-utils";
+import { i18n, I18nKey } from "../i18n/translation";
 import { getCategoryUrl, getTagUrl } from "../utils/url-utils";
 
 export interface Props {
@@ -65,7 +64,7 @@ const {
             <a href={getCategoryUrl(category || '')} aria-label={`View all posts in the ${category} category`}
                class="link-lg transition text-50 text-sm font-medium
                             hover:text-(--primary) dark:hover:text-(--primary) whitespace-nowrap">
-                {category || i18n(I18nKey.uncategorized)}
+                {category || "Uncategorized"}
             </a>
         </div>
     </div>
@@ -77,7 +76,7 @@ const {
                 <Icon name="material-symbols:article-outline-rounded" class="text-xl"></Icon>
             </div>
             <span class="text-50 text-sm font-medium">
-                {words} {words > 1 ? i18n(I18nKey.wordsCount) : i18n(I18nKey.wordCount)}
+                {words} {words > 1 ? "characters" : "character"}
             </span>
         </div>
     )}
@@ -99,7 +98,7 @@ const {
                         </a>
                     </>
                 ))}
-                {!(tags && tags.length > 0) && <div class="transition text-50 text-sm font-medium">{i18n(I18nKey.noTags)}</div>}
+                {!(tags && tags.length > 0) && <div class="transition text-50 text-sm font-medium">No tags</div>}
             </div>
         </div>
     )}

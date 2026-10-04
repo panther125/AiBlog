@@ -231,29 +231,49 @@ const { preloadIcons = [], timeout = 10000, retryCount = 3 } = Astro.props;
 
     // 创建全局实例
     window.__iconifyLoader = new IconifyLoader();
+    const loader = window.__iconifyLoader;
 
-    // 立即开始加载
-    window.__iconifyLoader.load().catch(error => {
-      console.error('Failed to initialize Iconify:', error);
-    });
+    function ensureLoaded() {
+      if (loader.isLoaded || loader.isLoading) return;
+      loader.load().catch(error => {
+        console.error('Failed to initialize Iconify:', error);
+      });
+    }
+
+    // astro-icon 的图标在构建期就已内联成 SVG，只有真正出现 <iconify-icon> 的页面
+    // 才需要拉取 CDN 上的 web component 和逐图标的 API 请求
+    function scanForIcons() {
+      if (document.querySelector('iconify-icon')) {
+        ensureLoaded();
+        return true;
+      }
+      return false;
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', scanForIcons, { once: true });
+    } else {
+      scanForIcons();
+    }
+    document.addEventListener('swup:page:view', scanForIcons);
 
     // 如果有预加载图标，添加到队列
     if (preloadIcons && preloadIcons.length > 0) {
-      window.__iconifyLoader.addToPreloadQueue(preloadIcons);
+      loader.addToPreloadQueue(preloadIcons);
+      ensureLoaded();
     }
 
     // 导出便捷函数到全局
-    window.loadIconify = () => window.__iconifyLoader?.load();
-    window.preloadIcons = (icons) => window.__iconifyLoader?.addToPreloadQueue(icons);
-    window.onIconifyReady = (callback) => {
-      return window.__iconifyLoader?.onLoad ? window.__iconifyLoader.onLoad(callback) : null;
+    window.loadIconify = () => loader.load();
+    window.preloadIcons = (icons) => {
+      loader.addToPreloadQueue(icons);
+      ensureLoaded();
     };
+    window.onIconifyReady = (callback) => loader.onLoad?.(callback);
 
     // 页面可见性变化时重新检查
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && !window.__iconifyLoader.isLoaded) {
-        window.__iconifyLoader.load().catch(console.error);
-      }
+      if (!document.hidden) scanForIcons();
     });
 
   })();

@@ -39,13 +39,11 @@ export const siteConfig: SiteConfig = {
 	// 特色页面开关配置（关闭未使用的页面有助于提升 SEO，关闭后请记得在 navbarConfig 中移除对应链接）
 	featurePages: {
 		anime: false, // 番剧页面开关
-		diary: true, // 日记页面开关
-		friends: true, // 友链页面开关
 		projects: true, // 项目页面开关
 		skills: true, // 技能页面开关
 		timeline: true, // 时间线页面开关
-		albums: true, // 相册页面开关
 		devices: false, // 设备页面开关
+		bookmarks: true, // 链接收藏页面开关
 	},
 
 	// 顶栏标题配置
@@ -85,7 +83,7 @@ export const siteConfig: SiteConfig = {
 	},
 
 	anime: {
-		mode: "local", // 番剧页面模式："bangumi" 使用Bangumi API，"local" 使用本地配置，"bilibili" 使用Bilibili API
+		mode: "local", // 番剧页面模式："bangumi" 使用 Bangumi API，"local" 使用本地配置，"bilibili" 使用 Bilibili API
 	},
 
 	// 文章列表布局配置
@@ -120,12 +118,12 @@ export const siteConfig: SiteConfig = {
 		src: {
 			desktop: ["assets/images/cat.png"], // 桌面横幅图片
 			mobile: [
-				"/assets/mobile-banner/1.webp",
-				"/assets/mobile-banner/2.webp",
-				"/assets/mobile-banner/3.webp",
-				"/assets/mobile-banner/4.webp",
-				"/assets/mobile-banner/5.webp",
-				"/assets/mobile-banner/6.webp",
+				"/assets/mobile-banner/1.min.webp",
+				"/assets/mobile-banner/2.min.webp",
+				"/assets/mobile-banner/3.min.webp",
+				"/assets/mobile-banner/4.min.webp",
+				"/assets/mobile-banner/5.min.webp",
+				"/assets/mobile-banner/6.min.webp",
 			], // 移动横幅图片
 		}, // 使用本地横幅图片
 
@@ -224,20 +222,20 @@ export const siteConfig: SiteConfig = {
 export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	src: {
 		desktop: [
-			"/assets/desktop-banner/1.webp",
-			"/assets/desktop-banner/2.webp",
-			"/assets/desktop-banner/3.webp",
-			"/assets/desktop-banner/4.webp",
-			"/assets/desktop-banner/5.webp",
-			"/assets/desktop-banner/6.webp",
+			"/assets/desktop-banner/1.min.webp",
+			"/assets/desktop-banner/2.min.webp",
+			"/assets/desktop-banner/3.min.webp",
+			"/assets/desktop-banner/4.min.webp",
+			"/assets/desktop-banner/5.min.webp",
+			"/assets/desktop-banner/6.min.webp",
 		], // 桌面横幅图片
 		mobile: [
-			"/assets/mobile-banner/1.webp",
-			"/assets/mobile-banner/2.webp",
-			"/assets/mobile-banner/3.webp",
-			"/assets/mobile-banner/4.webp",
-			"/assets/mobile-banner/5.webp",
-			"/assets/mobile-banner/6.webp",
+			"/assets/mobile-banner/1.min.webp",
+			"/assets/mobile-banner/2.min.webp",
+			"/assets/mobile-banner/3.min.webp",
+			"/assets/mobile-banner/4.min.webp",
+			"/assets/mobile-banner/5.min.webp",
+			"/assets/mobile-banner/6.min.webp",
 		], // 移动横幅图片
 	}, // 使用本地横幅图片
 	position: "center", // 壁纸位置，等同于 object-position
@@ -261,57 +259,9 @@ export const navBarConfig: NavBarConfig = {
 			icon: "material-symbols:newspaper",
 		},
 		{
-			name: "链接",
-			url: "/links/",
-			icon: "material-symbols:link",
-			children: [
-				{
-					name: "GitHub",
-					url: "https://github.com/panther9985",
-					external: true,
-					icon: "fa7-brands:github",
-				},
-				{
-					name: "Bilibili",
-					url: "https://space.bilibili.com/322993153",
-					external: true,
-					icon: "fa7-brands:bilibili",
-				},
-			],
-		},
-		{
 			name: "我的",
-			url: "/content/",
+			url: "/about/",
 			icon: "material-symbols:person",
-			children: [
-				{
-					name: "日记",
-					url: "/diary/",
-					icon: "material-symbols:book",
-				},
-				{
-					name: "相册",
-					url: "/albums/",
-					icon: "material-symbols:photo-library",
-				},
-			],
-		},
-		{
-			name: "关于",
-			url: "/content/",
-			icon: "material-symbols:info",
-			children: [
-				{
-					name: "关于我",
-					url: "/about/",
-					icon: "material-symbols:person",
-				},
-				{
-					name: "友链",
-					url: "/friends/",
-					icon: "material-symbols:group",
-				},
-			],
 		},
 		{
 			name: "其他",
@@ -332,6 +282,11 @@ export const navBarConfig: NavBarConfig = {
 					name: "时间线",
 					url: "/timeline/",
 					icon: "material-symbols:timeline",
+				},
+				{
+					name: "链接收藏",
+					url: "/bookmarks/",
+					icon: "material-symbols:bookmarks",
 				},
 			],
 		},
@@ -413,25 +368,26 @@ export const shareConfig: ShareConfig = {
 };
 
 export const announcementConfig: AnnouncementConfig = {
-	title: "", // 公告标题，填空使用i18n字符串Key.announcement
+	title: "", // 公告标题，填空使用 i18n 字符串 Key.announcement
 	content: "欢迎来到我的博客！这里记录我的学习与生活", // 公告内容
 	closable: true, // 允许用户关闭公告
-	link: {
-		enable: true, // 启用链接
-		text: "了解更多", // 链接文本
-		url: "/about/", // 链接 URL
-		external: false, // 内部链接
-	},
 };
 
 export const musicPlayerConfig: MusicPlayerConfig = {
 	enable: true, // 启用音乐播放器功能
 	mode: "meting", // 音乐播放器模式，可选 "local" 或 "meting"
 	meting_api:
-		"https://meting.mysqil.com/api?server=:server&type=:type&id=:id&auth=:auth&r=:r", // Meting API 地址
-	id: "14164869977", // 歌单ID
+		"https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r", // Meting API 地址，只用于取歌单元数据
+	id: "3161132764", // 歌单ID，配置了 daily_playlists 时仅作备用
 	server: "netease", // 音乐源服务器。有的meting的api源支持更多平台,一般来说,netease=网易云音乐, tencent=QQ音乐, kugou=酷狗音乐, xiami=虾米音乐, baidu=百度音乐
 	type: "playlist", // 播单类型
+	// 每日推荐歌单池，按日期轮换取歌单。括号内是实测可播数（前 20 首，走网易官方 outer 直链）：
+	// 抖音热歌2026热歌榜 18/20、飙升榜 17/20、新歌榜 18/20，且三者都在持续更新
+	daily_playlists: ["3161132764", "19723756", "3779629"],
+	daily_track_count: 20, // 每天取的曲目数
+	// 只在歌单前 N 首内轮换：大歌单越靠后越是陈年曲目且可播率骤降
+	// （3161132764 实测 0-60 段 18~20/20，120-140 段只剩 1/20）
+	daily_head_size: 60,
 };
 
 export const footerConfig: FooterConfig = {

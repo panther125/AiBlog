@@ -1,12 +1,11 @@
-<script lang="ts">
+﻿<script lang="ts">
+import { i18n, I18nKey } from "../i18n/translation";
     import {
         WALLPAPER_BANNER,
         WALLPAPER_FULLSCREEN,
         WALLPAPER_NONE,
     } from "@constants/constants";
-    import I18nKey from "@i18n/i18nKey";
-    import { i18n } from "@i18n/translation";
-    import Icon from "@iconify/svelte";
+            import Icon from "@iconify/svelte";
     import {
         getStoredWallpaperMode,
         setWallpaperMode,

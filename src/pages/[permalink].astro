@@ -1,4 +1,5 @@
 ---
+import { i18n, I18nKey } from "../i18n/translation";
 /**
  * 处理 permalink 的文章（包括全局 permalink 和自定义 permalink）
  * 全局 permalink 启用时，所有文章链接在根目录下生成
@@ -12,8 +13,6 @@ import Comment from "@components/comment/index.astro";
 import License from "@components/misc/License.astro";
 import Markdown from "@components/misc/Markdown.astro";
 import PasswordProtection from "@components/PasswordProtection.astro";
-import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
 import { getFileDirFromPath, getPostUrlBySlug } from "@utils/url-utils";
@@ -141,7 +140,7 @@ const jsonLd = {
                     </div>
                     <div class="text-sm">
                         {remarkPluginFrontmatter.words}
-                        {" " + i18n(I18nKey.wordsCount)}
+                        {" characters"}
                     </div>
                 </div>
                 <div class="flex flex-row items-center">

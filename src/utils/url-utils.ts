@@ -1,6 +1,4 @@
 import type { CollectionEntry } from "astro:content";
-import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
 import { permalinkConfig } from "../config";
 import { generatePermalinkSlug } from "./permalink-utils";
 
@@ -73,8 +71,7 @@ export function getCategoryUrl(category: string | null): string {
 	if (
 		!category ||
 		category.trim() === "" ||
-		category.trim().toLowerCase() ===
-			i18n(I18nKey.uncategorized).toLowerCase()
+		category.trim().toLowerCase() === "uncategorized"
 	)
 		return url("/archive/?uncategorized=true");
 	return url(`/archive/?category=${encodeURIComponent(category.trim())}`);
@@ -97,3 +94,4 @@ export function getFileDirFromPath(filePath: string): string {
 export function url(path: string) {
 	return joinUrl("", import.meta.env.BASE_URL, path);
 }
+

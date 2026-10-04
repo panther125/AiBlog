@@ -1,6 +1,4 @@
-import { type CollectionEntry, getCollection } from "astro:content";
-import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
+﻿import { type CollectionEntry, getCollection } from "astro:content";
 import { getCategoryUrl, getPostUrl } from "@utils/url-utils";
 import { initPostIdMap } from "@utils/permalink-utils";
 
@@ -109,7 +107,7 @@ export async function getCategoryList(): Promise<Category[]> {
 	const count: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { category: string | null } }) => {
 		if (!post.data.category) {
-			const ucKey = i18n(I18nKey.uncategorized);
+			const ucKey = "Uncategorized";
 			count[ucKey] = count[ucKey] ? count[ucKey] + 1 : 1;
 			return;
 		}

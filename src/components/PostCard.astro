@@ -31,6 +31,11 @@ const url = getPostUrl(entry);
 const hasCover = image !== undefined && image !== null && image !== "";
 const coverWidth = "28%";
 
+// 由文章 id 派生一个稳定的色相角，让无封面卡片的底图各不相同但不产生额外请求
+let idHash = 7;
+for (const ch of entry.id) idHash = (idHash * 31 + ch.codePointAt(0)! ) % 36000;
+const coverHue = idHash % 360;
+
 const { remarkPluginFrontmatter } = await render(entry);
 ---
 
@@ -164,13 +169,14 @@ const { remarkPluginFrontmatter } = await render(entry);
          overflow-hidden group/btn
         "
 			>
-				{/* 背景图片 - 使用 object-cover 保持比例填充 */}
+				{/* 本地封面底图 + 按文章 id 派生的色相偏移，避免每张卡片都请求远程随机图 */}
 				<img 
-					src="/assets/images/post-btn-bg.webp" 
+					src="/assets/images/post-btn-bg.min.webp"
 					alt=""
+					loading="lazy"
+					decoding="async"
 					class="absolute inset-0 w-full h-full object-cover object-center opacity-50 group-hover/btn:opacity-30 transition-opacity duration-300"
-					style="object-fit: cover; object-position: center;"
-					onerror="this.style.display='none'"
+					style={`object-fit: cover; object-position: center; filter: hue-rotate(${coverHue}deg);`}
 				/>
 				{/* 渐变遮罩 */}
 				<div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 group-hover/btn:to-black/30 transition-all duration-300" />

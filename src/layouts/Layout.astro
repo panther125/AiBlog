@@ -160,6 +160,15 @@ if (siteConfig.font) {
 	// 组合成完整的 font-family 字符串
 	bodyFontFamily = fonts.join(", ");
 }
+
+// 正文 CJK 字体由 main.css 的 @font-face 声明；提前 preload 省掉“解析 CSS 才发现字体”的一趟往返
+const cjkFontFile = siteConfig.font?.cjkFont?.localFonts?.[0]?.replace(
+	/\.(ttf|otf|woff)$/i,
+	".woff2",
+);
+const cjkFontHref = cjkFontFile
+	? encodeURI(`/assets/font-subset/${cjkFontFile}`)
+	: null;
 ---
 
 <!doctype html>
@@ -169,6 +178,20 @@ if (siteConfig.font) {
 	data-overlayscrollbars-initialize
 >
 	<head>
+		{
+			cjkFontHref && (
+				<link
+					rel="preload"
+					href={cjkFontHref}
+					as="font"
+					type="font/woff2"
+					crossorigin
+				/>
+			)
+		}
+		<link rel="preconnect" href="https://api.iconify.design" crossorigin />
+		<link rel="preconnect" href="https://api.i-meto.com" crossorigin />
+
 		<!-- 第三方分析脚本 - 延迟加载优化 -->
 		<script is:inline>
 			// 使用 requestIdleCallback 延迟加载第三方脚本
@@ -204,12 +227,14 @@ if (siteConfig.font) {
 				})(window, document, "clarity", "script", "tjr3vkhj8i");
 			}
 
-			// 在浏览器空闲时加载，或者在 3 秒后加载
-			if ("requestIdleCallback" in window) {
-				requestIdleCallback(loadAnalytics, { timeout: 3000 });
-			} else {
-				setTimeout(loadAnalytics, 3000);
-			}
+			// 先等首屏资源加载完，再在空闲时段加载，避免和分析脚本抢占带宽
+			window.addEventListener("load", () => {
+				if ("requestIdleCallback" in window) {
+					requestIdleCallback(loadAnalytics, { timeout: 5000 });
+				} else {
+					setTimeout(loadAnalytics, 3000);
+				}
+			});
 		</script>
 
 		<title>{pageTitle}</title>
