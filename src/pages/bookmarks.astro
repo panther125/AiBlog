@@ -52,15 +52,24 @@ const subtitle = "我收藏的优质网站与工具导航";
 			<!-- 结果计数 + 管理操作 -->
 			<div class="flex flex-wrap items-center justify-between gap-3 mb-4 pl-1">
 				<div id="bm-count" class="text-sm text-60"></div>
-				<div class="flex items-center gap-2">
-					<button id="bm-add-btn" class="bm-action" title="添加新链接">
+				<div class="flex items-center gap-2 flex-wrap">
+					<button id="bm-add-btn" class="bm-action" title="添加链接（填网址自动获取名称、简介与图标）">
 						<iconify-icon icon="material-symbols:add" class="text-lg"></iconify-icon>
 						添加链接
+					</button>
+					<button id="bm-export-btn" class="bm-action" title="把增删结果导出为 JSON 备份文件">
+						<iconify-icon icon="material-symbols:download" class="text-lg"></iconify-icon>
+						导出备份
+					</button>
+					<button id="bm-import-btn" class="bm-action" title="从 JSON 备份恢复增删结果">
+						<iconify-icon icon="material-symbols:upload" class="text-lg"></iconify-icon>
+						导入备份
 					</button>
 					<button id="bm-reset-btn" class="bm-action" title="恢复为站点内置的默认收藏">
 						<iconify-icon icon="material-symbols:restart-alt" class="text-lg"></iconify-icon>
 						恢复默认
 					</button>
+					<input id="bm-import-file" type="file" accept=".json,application/json" class="hidden" />
 				</div>
 			</div>
 
@@ -89,11 +98,22 @@ const subtitle = "我收藏的优质网站与工具导航";
 							data-source="builtin"
 						>
 							<a href={b.url} target="_blank" rel="noopener noreferrer" class="block">
-								<div class="flex items-start gap-3 p-4 pr-11">
+								<div class="flex items-start gap-3 p-4 pr-20">
 									<div class="bm-icon flex items-center justify-center w-11 h-11 rounded-xl
 										bg-(--primary)/10 text-(--primary) text-2xl shrink-0
 										group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-										<iconify-icon icon={b.icon || "mdi:link"}></iconify-icon>
+										<!-- logo 与 iconify 图标二选一显示；两者都要留在模板里，克隆出来的新卡片才有 logo 节点 -->
+										<iconify-icon
+											icon={b.icon || "mdi:link"}
+											class:list={["bm-glyph", b.logo ? "hidden" : ""]}
+										></iconify-icon>
+										<img
+											class="bm-logo"
+											class:list={[b.logo ? "" : "hidden"]}
+											src={b.logo}
+											alt=""
+											loading="lazy"
+										/>
 									</div>
 									<div class="flex-1 min-w-0">
 										<h3 class="text-base font-semibold text-90 truncate group-hover:text-(--primary) transition-colors">
@@ -112,14 +132,24 @@ const subtitle = "我收藏的优质网站与工具导航";
 									></iconify-icon>
 								</div>
 							</a>
-							<button
-								class="bm-del"
-								data-del={b.id}
-								aria-label={"删除链接 " + b.title}
-								title="删除此链接"
-							>
-								<iconify-icon icon="material-symbols:delete-outline" class="text-base"></iconify-icon>
-							</button>
+							<div class="bm-card-actions">
+								<button
+									class="bm-act"
+									data-copy={b.url}
+									aria-label={"复制链接 " + b.title}
+									title="复制链接地址"
+								>
+									<iconify-icon icon="material-symbols:content-copy" class="text-base"></iconify-icon>
+								</button>
+								<button
+									class="bm-del"
+									data-del={b.id}
+									aria-label={"删除链接 " + b.title}
+									title="删除此链接"
+								>
+									<iconify-icon icon="material-symbols:delete-outline" class="text-base"></iconify-icon>
+								</button>
+							</div>
 						</div>
 					))
 				}
@@ -146,30 +176,51 @@ const subtitle = "我收藏的优质网站与工具导航";
 					</div>
 					<div class="space-y-3">
 						<div>
-							<label class="bm-label" for="bm-f-title">网站名称 <span class="text-red-500">*</span></label>
-							<input id="bm-f-title" class="bm-input" type="text" placeholder="例如：Figma" autocomplete="off" />
-						</div>
-						<div>
 							<label class="bm-label" for="bm-f-url">链接地址 <span class="text-red-500">*</span></label>
-							<input id="bm-f-url" class="bm-input" type="text" placeholder="https://www.figma.com/" autocomplete="off" />
+							<input
+								id="bm-f-url"
+								class="bm-input"
+								type="text"
+								placeholder="粘贴网址即可，例如 https://www.figma.com/"
+								autocomplete="off"
+								spellcheck="false"
+							/>
+							<p id="bm-fetch-state" class="bm-fetch-state" data-state="idle">
+								只需填写网址，名称与简介会自动获取。
+							</p>
 						</div>
+
+						<!-- 解析结果预览；抓取失败时这里就是手动填写区 -->
+						<div class="bm-preview">
+							<div class="bm-preview-icon">
+								<iconify-icon icon="mdi:link" class="bm-preview-glyph"></iconify-icon>
+								<img id="bm-f-logo" class="bm-preview-logo hidden" alt="" />
+							</div>
+							<div class="flex-1 min-w-0 space-y-2">
+								<div>
+									<label class="bm-label" for="bm-f-title">网站名称 <span class="text-red-500">*</span></label>
+									<input id="bm-f-title" class="bm-input" type="text" placeholder="例如：Figma" autocomplete="off" />
+								</div>
+								<div>
+									<label class="bm-label" for="bm-f-desc">简介</label>
+									<input id="bm-f-desc" class="bm-input" type="text" placeholder="一句话说明这个网站是做什么的" autocomplete="off" />
+								</div>
+							</div>
+						</div>
+
 						<div>
-							<label class="bm-label" for="bm-f-desc">简介</label>
-							<input id="bm-f-desc" class="bm-input" type="text" placeholder="一句话说明这个网站是做什么的" autocomplete="off" />
-						</div>
-						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-							<div>
-								<label class="bm-label" for="bm-f-cat">分类</label>
-								<input id="bm-f-cat" class="bm-input" type="text" list="bm-cat-list" placeholder="开发工具" autocomplete="off" />
-								<datalist id="bm-cat-list">
-									{categories.map((c) => <option value={c}></option>)}
-								</datalist>
+							<label class="bm-label" for="bm-f-cat">分类</label>
+							<div class="bm-select-wrap">
+								<!-- 打开弹窗时按当前筛选 chip 重建选项，自定义分类也会在里面 -->
+								<select id="bm-f-cat" class="bm-input bm-select">
+									{categories.map((c) => <option value={c}>{c}</option>)}
+									<option value="__new__">＋ 新建分类…</option>
+								</select>
+								<iconify-icon icon="material-symbols:expand-more-rounded" class="bm-select-arrow"></iconify-icon>
 							</div>
-							<div>
-								<label class="bm-label" for="bm-f-icon">图标名</label>
-								<input id="bm-f-icon" class="bm-input" type="text" placeholder="mdi:link" autocomplete="off" />
-							</div>
+							<input id="bm-f-cat-new" class="bm-input mt-2 hidden" type="text" placeholder="输入新分类名称，例如：AI 工具" autocomplete="off" />
 						</div>
+
 						<div>
 							<label class="bm-label" for="bm-f-tags">标签（逗号分隔，可选）</label>
 							<input id="bm-f-tags" class="bm-input" type="text" placeholder="设计, 协作" autocomplete="off" />
@@ -292,12 +343,24 @@ const subtitle = "我收藏的优质网站与工具导航";
 		transform: scale(0.96);
 	}
 
-	/* 卡片右上角的删除按钮：默认隐藏，hover/focus 时显现 */
-	.bm-del {
+	/* 卡片右上角操作按钮组（复制链接 / 删除）：默认隐藏，hover/focus 时显现 */
+	.bm-card-actions {
 		position: absolute;
 		top: 0.5rem;
 		right: 0.5rem;
 		z-index: 10;
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+	.bm-card:hover .bm-card-actions,
+	.bm-card-actions:focus-within {
+		opacity: 1;
+	}
+	.bm-del,
+	.bm-act {
 		width: 1.75rem;
 		height: 1.75rem;
 		display: flex;
@@ -307,22 +370,22 @@ const subtitle = "我收藏的优质网站与工具导航";
 		border: 1px solid var(--line-divider, #e5e5e5);
 		background: var(--card-bg, #fff);
 		color: var(--text-50, #999);
-		opacity: 0;
 		transition: all 0.2s ease;
 		cursor: pointer;
 	}
-	.bm-card:hover .bm-del,
-	.bm-del:focus-visible {
-		opacity: 1;
+	.bm-act:hover {
+		color: var(--primary, #3b82f6);
+		border-color: var(--primary, #3b82f6);
+		background: rgba(59, 130, 246, 0.08);
 	}
 	.bm-del:hover {
 		color: #ef4444;
 		border-color: #fca5a5;
 		background: rgba(239, 68, 68, 0.08);
 	}
-	/* 触屏设备无 hover，删除按钮始终显示 */
+	/* 触屏设备无 hover，操作按钮始终显示 */
 	@media (hover: none) {
-		.bm-del {
+		.bm-card-actions {
 			opacity: 1;
 		}
 	}
@@ -405,6 +468,75 @@ const subtitle = "我收藏的优质网站与工具导航";
 	}
 	.bm-input:focus {
 		border-color: var(--primary, #3b82f6);
+	}
+	/* 卡片左上角：有站点 logo 时用图片，没有则回退 iconify 图标 */
+	.bm-logo {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		border-radius: 0.75rem;
+	}
+	.bm-fetch-state {
+		margin-top: 0.375rem;
+		font-size: 0.75rem;
+		line-height: 1.5;
+		color: var(--text-40, #aaa);
+		word-break: break-all;
+	}
+	.bm-fetch-state[data-state="loading"] {
+		color: var(--text-60, #888);
+	}
+	.bm-fetch-state[data-state="ok"] {
+		color: var(--primary, #3b82f6);
+	}
+	.bm-fetch-state[data-state="err"] {
+		color: #ef4444;
+	}
+	.bm-preview {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		border-radius: 0.75rem;
+		border: 1px dashed var(--line-divider, #e5e5e5);
+	}
+	.bm-preview-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		flex-shrink: 0;
+		border-radius: 0.75rem;
+		border: 1px solid var(--line-divider, #e5e5e5);
+		color: var(--text-40, #aaa);
+		font-size: 1.375rem;
+		overflow: hidden;
+	}
+	.bm-preview-logo {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+	/* 分类下拉：隐藏原生箭头改用图标，明暗主题下都和输入框保持一致 */
+	.bm-select-wrap {
+		position: relative;
+	}
+	.bm-select {
+		appearance: none;
+		-webkit-appearance: none;
+		padding-right: 2rem;
+		background-color: var(--card-bg, #fff);
+		cursor: pointer;
+	}
+	.bm-select-arrow {
+		position: absolute;
+		right: 0.625rem;
+		top: 50%;
+		transform: translateY(-50%);
+		font-size: 1.125rem;
+		color: var(--text-40, #aaa);
+		pointer-events: none;
 	}
 	.bm-code-input {
 		text-align: center;
@@ -523,7 +655,23 @@ const subtitle = "我收藏的优质网站与工具导航";
 		const el = document.getElementById(id);
 		return el instanceof HTMLInputElement ? el : null;
 	}
+	function selectOf(id) {
+		const el = document.getElementById(id);
+		return el instanceof HTMLSelectElement ? el : null;
+	}
+	function imgOf(id) {
+		const el = document.getElementById(id);
+		return el instanceof HTMLImageElement ? el : null;
+	}
 	function noop() {}
+	// JSON.parse 的结果先赋给 `let x = null` 会被推成 never，包一层直接返回 any
+	function parseJson(text) {
+		try {
+			return JSON.parse(text);
+		} catch (err) {
+			return null;
+		}
+	}
 
 	function initBookmarks() {
 		const gridEl = elOf("bm-grid");
@@ -540,6 +688,9 @@ const subtitle = "我收藏的优质网站与工具导航";
 		const toastEl = elOf("bm-toast");
 
 		const addBtn = elOf("bm-add-btn");
+		const exportBtn = elOf("bm-export-btn");
+		const importBtn = elOf("bm-import-btn");
+		const importFile = inputOf("bm-import-file");
 		const resetBtn = elOf("bm-reset-btn");
 		const addModal = elOf("bm-add-modal");
 		const codeModal = elOf("bm-code-modal");
@@ -551,9 +702,15 @@ const subtitle = "我收藏的优质网站与工具导航";
 		const fTitle = inputOf("bm-f-title");
 		const fUrl = inputOf("bm-f-url");
 		const fDesc = inputOf("bm-f-desc");
-		const fCat = inputOf("bm-f-cat");
-		const fIcon = inputOf("bm-f-icon");
+		const fCat = selectOf("bm-f-cat");
+		const fCatNew = inputOf("bm-f-cat-new");
 		const fTags = inputOf("bm-f-tags");
+		const fLogo = imgOf("bm-f-logo");
+		const fetchState = elOf("bm-fetch-state");
+		const glyphRaw = fLogo && fLogo.parentElement
+			? fLogo.parentElement.querySelector(".bm-preview-glyph")
+			: null;
+		const fGlyph = glyphRaw instanceof HTMLElement ? glyphRaw : null;
 
 		if (grid.dataset.bmInit) return; // 防止同一页面重复绑定
 		grid.dataset.bmInit = "1";
@@ -621,6 +778,217 @@ const subtitle = "我收藏的优质网站与工具导航";
 			return String(url).replace(/^https?:\/\//, "");
 		}
 
+		// ===== 站点信息自动获取 =====
+		// 纯静态站没有后端，浏览器直连目标网址会被 CORS 拦住，所以走 Microlink 的公共
+		// 元数据接口（返回 title / description / logo.url）。抓不到不阻断添加：
+		// 预览区的名称与简介本来就是手动填写区。
+		const META_API = "https://api.microlink.io/?meta=true&url=";
+		const NEW_CAT = "__new__";
+		const FETCH_TIMEOUT = 12000; // 冷解析实测 0.6~6s，留足余量
+		const IDLE_HINT = "只需填写网址，名称与简介会自动获取。";
+
+		let autoLogo = ""; // 随表单一起写进卡片的站点图标
+		let logoSeq = 0;
+		let fetchSeq = 0; // 只认最后一次请求的结果
+		// 用 window.setTimeout 取 lib.dom 的 number 返回值，否则会被 @types/node 推成 Timeout
+		let fetchTimer = 0;
+		let autoTitle = ""; // 上一次自动填入的值，用户改过的字段不覆盖
+		let autoDesc = "";
+
+		function domainOf(url) {
+			try {
+				return new URL(url).hostname.replace(/^www\./i, "");
+			} catch (err) {
+				return "";
+			}
+		}
+
+		// 接口没给出名称时的兜底：取主机名首段并大写首字母
+		function titleFromDomain(url) {
+			const head = domainOf(url).split(".")[0];
+			return head ? head.charAt(0).toUpperCase() + head.slice(1) : "";
+		}
+
+		// 返回规范化后的绝对地址，非法或没有点分的域名返回空串
+		function absUrl(raw) {
+			const s = String(raw || "").trim();
+			if (!s || /\s/.test(s)) return "";
+			try {
+				const u = new URL(/^https?:\/\//i.test(s) ? s : "https://" + s);
+				return u.hostname && u.hostname.indexOf(".") > 0 ? u.href : "";
+			} catch (err) {
+				return "";
+			}
+		}
+
+		// microlink 的 logo / image 既可能是对象也可能是字符串
+		function urlOf(field) {
+			if (typeof field === "string") return field;
+			if (field && typeof field.url === "string") return field.url;
+			return "";
+		}
+
+		function setFetchState(state, msg) {
+			if (!fetchState) return;
+			fetchState.setAttribute("data-state", state);
+			fetchState.textContent = msg;
+		}
+
+		// 站点图标统一经 weserv 图片代理取（SharePoster 也在用它）：直连图床在国内常被
+		// 防盗链挂住且不报错，代理一次就能拿到。卡片里存的仍是原始地址，备份不依赖第三方。
+		function proxyLogo(src) {
+			return (
+				"https://images.weserv.nl/?url=" +
+				encodeURIComponent(String(src).replace(/^https?:\/\//i, "")) +
+				"&output=png&w=96&h=96"
+			);
+		}
+
+		// 图标要等加载成功才换上，避免破图闪现；logoSeq 让旧的 onload/onerror 失效
+		function showLogo(src) {
+			if (!fLogo) return;
+			const seq = ++logoSeq;
+			fLogo.classList.add("hidden");
+			if (fGlyph) fGlyph.classList.remove("hidden");
+			fLogo.onload = () => {
+				if (seq !== logoSeq) return;
+				fLogo.classList.remove("hidden");
+				if (fGlyph) fGlyph.classList.add("hidden");
+			};
+			fLogo.onerror = () => {
+				if (seq === logoSeq) {
+					fLogo.classList.add("hidden");
+					if (fGlyph) fGlyph.classList.remove("hidden");
+				}
+			};
+			if (src) fLogo.src = proxyLogo(src);
+			else fLogo.removeAttribute("src");
+		}
+
+		function applyAuto(field, value, isTitle) {
+			if (!field || !value) return;
+			const prev = isTitle ? autoTitle : autoDesc;
+			if (!field.value.trim() || field.value === prev) {
+				field.value = value;
+				if (isTitle) {
+					autoTitle = value;
+				} else {
+					autoDesc = value;
+				}
+			}
+		}
+
+		function fetchMeta(url) {
+			const seq = ++fetchSeq;
+			setFetchState("loading", "正在获取站点信息… 首次解析约需 1~6 秒");
+			const ctrl = new AbortController();
+			const timer = setTimeout(() => {
+				ctrl.abort();
+			}, FETCH_TIMEOUT);
+			fetch(META_API + encodeURIComponent(url), { signal: ctrl.signal })
+				.then((res) => {
+					if (!res.ok) throw new Error("HTTP " + res.status);
+					return res.json();
+				})
+				.then((json) => {
+					if (seq !== fetchSeq) return;
+					const d = json && json.status === "success" ? json.data : null;
+					if (!d) throw new Error("无数据");
+					const host = domainOf(url);
+					const title = String(d.title || "").trim();
+					const desc = String(d.description || "").trim();
+					const logo = urlOf(d.logo);
+					// microlink 打不开目标站点时也回 200，只把主机名当标题回填，
+					// 这种「什么都没解析到」必须算失败，否则会谎报已获取
+					if (!logo && !desc && (title === "" || title === host)) {
+						throw new Error("该站点没有可解析的信息");
+					}
+					autoLogo = logo;
+					showLogo(autoLogo);
+					applyAuto(fTitle, title || titleFromDomain(url), true);
+					applyAuto(fDesc, desc, false);
+					if (fTitle && !fTitle.value.trim()) fTitle.value = titleFromDomain(url);
+					setFetchState("ok", "已获取 " + host + " 的信息，名称与简介可直接修改");
+				})
+				.catch((err) => {
+					if (seq !== fetchSeq) return;
+					autoLogo = "";
+					showLogo("");
+					if (fTitle && !fTitle.value.trim()) fTitle.value = titleFromDomain(url);
+					setFetchState(
+						"err",
+						"自动获取失败（" +
+							String((err && err.message) || "网络不可达") +
+							"），名称与简介请手动填写",
+					);
+				})
+				.then(() => {
+					clearTimeout(timer);
+				});
+		}
+
+		function runFetch() {
+			if (!fUrl) return;
+			const url = absUrl(fUrl.value);
+			if (!url) {
+				fetchSeq++; // 让在途请求的结果作废
+				if (fUrl.dataset.fetched) {
+					delete fUrl.dataset.fetched;
+					autoLogo = "";
+					showLogo("");
+					setFetchState("idle", IDLE_HINT);
+				}
+				return;
+			}
+			if (fUrl.dataset.fetched === url) return; // 同一地址不重复请求
+			fUrl.dataset.fetched = url;
+			fetchMeta(url);
+		}
+
+		function scheduleFetch() {
+			if (fetchTimer) window.clearTimeout(fetchTimer);
+			fetchTimer = window.setTimeout(runFetch, 600);
+		}
+
+		// 分类下拉的选项 = 当前筛选 chip 的类目（含自定义卡片带出来的新分类）。
+		// 用 createElement + textContent 而不是 innerHTML，分类名是用户输入，不能当 HTML 解析。
+		function rebuildCatOptions() {
+			if (!fCat) return;
+			const bar = filters ? filters : document.createElement("div");
+			const raw = Array.from(bar.querySelectorAll(".bm-chip")).map(
+				(c) => c.getAttribute("data-cat") || "",
+			);
+			const names = Array.from(new Set(raw)).filter(
+				(n) => n !== "" && n !== "all",
+			);
+			const wanted = fCat.value === NEW_CAT ? NEW_CAT : fCat.value;
+			fCat.textContent = "";
+			names.forEach((n) => {
+				const opt = document.createElement("option");
+				opt.value = n;
+				opt.textContent = n;
+				fCat.appendChild(opt);
+			});
+			const newOpt = document.createElement("option");
+			newOpt.value = NEW_CAT;
+			newOpt.textContent = "＋ 新建分类…";
+			fCat.appendChild(newOpt);
+			fCat.value = names.indexOf(wanted) !== -1 ? wanted : NEW_CAT;
+		}
+
+		function syncCatNew(focus) {
+			if (!fCat || !fCatNew) return;
+			const isNew = fCat.value === NEW_CAT;
+			fCatNew.classList.toggle("hidden", !isNew);
+			if (isNew && focus) fCatNew.focus();
+		}
+
+		function chosenCat() {
+			if (!fCat) return "";
+			if (fCat.value !== NEW_CAT) return fCat.value;
+			return fCatNew && fCatNew.value ? fCatNew.value.trim() : "";
+		}
+
 		// 用静态卡片作模板克隆出新卡片（保留 astro-cid，样式才生效）
 		function appendCard(b) {
 			if (!cardTemplate) return false;
@@ -634,8 +1002,31 @@ const subtitle = "我收藏的优质网站与工具导航";
 			node.dataset.source = "custom";
 			const a = node.querySelector("a");
 			if (a) a.setAttribute("href", b.url);
-			const icon = node.querySelector(".bm-icon iconify-icon");
-			if (icon) icon.setAttribute("icon", b.icon || "mdi:link");
+			// logo 优先：有站点图标就显示图片并隐藏 iconify，否则回退图标名。
+			// 图标可能指向访问不到的图床，加载失败要退回图标，否则卡片上是个破图。
+			const glyphRaw = node.querySelector(".bm-icon .bm-glyph");
+			const logoRaw = node.querySelector(".bm-icon .bm-logo");
+			const glyph = glyphRaw instanceof HTMLElement ? glyphRaw : null;
+			const logoImg = logoRaw instanceof HTMLImageElement ? logoRaw : null;
+			if (glyph) {
+				glyph.setAttribute("icon", b.icon || "mdi:link");
+				glyph.classList.remove("hidden");
+			}
+			if (b.logo && logoImg) {
+				// 先只显示图标，等代理回来的 logo 加载成功再换上
+				logoImg.onload = () => {
+					logoImg.classList.remove("hidden");
+					if (glyph) glyph.classList.add("hidden");
+				};
+				logoImg.onerror = () => {
+					logoImg.classList.add("hidden");
+					if (glyph) glyph.classList.remove("hidden");
+				};
+				logoImg.src = proxyLogo(b.logo);
+			} else if (logoImg) {
+				logoImg.removeAttribute("src");
+				logoImg.classList.add("hidden");
+			}
 			const h3 = node.querySelector("h3");
 			if (h3) h3.textContent = b.title;
 			const p = node.querySelector("p");
@@ -644,6 +1035,8 @@ const subtitle = "我收藏的优质网站与工具导航";
 			if (domain) domain.textContent = shortUrl(b.url);
 			const del = node.querySelector(".bm-del");
 			if (del) del.setAttribute("data-del", b.id);
+			const copy = node.querySelector(".bm-act");
+			if (copy) copy.setAttribute("data-copy", b.url);
 			grid.appendChild(node);
 			return true;
 		}
@@ -762,6 +1155,39 @@ const subtitle = "我收藏的优质网站与工具导航";
 			});
 		}
 
+		// 复制链接（委托）
+		grid.addEventListener("click", (e) => {
+			const from = e.target instanceof Element ? e.target : null;
+			const btn = from ? from.closest(".bm-act") : null;
+			if (!(btn instanceof HTMLElement) || !grid.contains(btn)) return;
+			e.preventDefault();
+			e.stopPropagation();
+			const url = btn.dataset.copy || "";
+			if (!url) return;
+			const done = () => toast("已复制链接：" + url);
+			const fallback = () => {
+				// 非安全上下文（http 部署）下 navigator.clipboard 不可用，退回 execCommand
+				const ta = document.createElement("textarea");
+				ta.value = url;
+				ta.style.position = "fixed";
+				ta.style.opacity = "0";
+				document.body.appendChild(ta);
+				ta.select();
+				try {
+					document.execCommand("copy");
+					done();
+				} catch (err) {
+					toast("复制失败，请手动复制：" + url);
+				}
+				document.body.removeChild(ta);
+			};
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(url).then(done).catch(fallback);
+			} else {
+				fallback();
+			}
+		});
+
 		// 删除按钮（委托）
 		grid.addEventListener("click", (e) => {
 			const from = e.target instanceof Element ? e.target : null;
@@ -790,41 +1216,82 @@ const subtitle = "我收藏的优质网站与工具导航";
 			});
 		});
 
-		// 添加链接：打开表单
+		// 添加链接：打开表单（只需要填网址，名称/简介/图标由解析填充）
 		if (addBtn) {
 			addBtn.addEventListener("click", () => {
-				[fTitle, fUrl, fDesc, fCat, fIcon, fTags].forEach((el) => {
+				[fTitle, fUrl, fDesc, fCatNew, fTags].forEach((el) => {
 					if (el) el.value = "";
 				});
+				if (fetchTimer) window.clearTimeout(fetchTimer);
+				fetchSeq++; // 丢弃上一次打开弹窗时可能仍在途的请求
+				if (fUrl) delete fUrl.dataset.fetched;
+				autoLogo = "";
+				autoTitle = "";
+				autoDesc = "";
+				showLogo("");
+				setFetchState("idle", IDLE_HINT);
+				rebuildCatOptions();
+				if (fCat && activeCat !== "all") {
+					const inFilter = Array.from(fCat.options).some(
+						(o) => o.value === activeCat,
+					);
+					if (inFilter) fCat.value = activeCat;
+				}
+				syncCatNew(false);
 				openModal(addModal);
 				setTimeout(() => {
-					if (fTitle) fTitle.focus();
+					if (fUrl) fUrl.focus();
 				}, 60);
 			});
 		}
 
-		// 添加链接：表单校验后弹验证码
+		// 网址停顿 600ms 后解析；粘贴立即解析
+		if (fUrl) {
+			fUrl.addEventListener("input", scheduleFetch);
+			fUrl.addEventListener("paste", () => {
+				setTimeout(runFetch, 80);
+			});
+			fUrl.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					if (fetchTimer) window.clearTimeout(fetchTimer);
+					runFetch();
+				}
+			});
+		}
+		if (fCat) {
+			fCat.addEventListener("change", () => {
+				syncCatNew(true);
+			});
+		}
+
+		// 添加链接：校验后弹验证码
 		if (addConfirm) {
 			addConfirm.addEventListener("click", () => {
 				if (!fTitle || !fUrl) return;
-				const title = (fTitle.value || "").trim();
-				let url = (fUrl.value || "").trim();
-				const desc = (fDesc && fDesc.value ? fDesc.value : "").trim();
-				const cat = ((fCat && fCat.value ? fCat.value : "").trim()) || "自定义";
-				const icon = ((fIcon && fIcon.value ? fIcon.value : "").trim()) || "mdi:link";
-				const tagsRaw = fTags && fTags.value ? fTags.value : "";
-				const tags = tagsRaw.split(/[,，、\s]+/).filter(Boolean);
+				const url = absUrl(fUrl.value);
+				if (!url) {
+					toast("请填写正确的网址，例如 https://www.figma.com/");
+					fUrl.focus();
+					return;
+				}
+				const cat = chosenCat();
+				if (!cat) {
+					toast("请输入新分类名称");
+					if (fCatNew) fCatNew.focus();
+					return;
+				}
+				// 解析失败也没关系：域名兜底，用户可再手改
+				const title = (fTitle.value || "").trim() || titleFromDomain(url);
 				if (!title) {
 					toast("请填写网站名称");
 					fTitle.focus();
 					return;
 				}
-				if (!url) {
-					toast("请填写链接地址");
-					fUrl.focus();
-					return;
-				}
-				if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+				if (!(fTitle.value || "").trim()) fTitle.value = title;
+				const desc = (fDesc && fDesc.value ? fDesc.value : "").trim();
+				const tagsRaw = fTags && fTags.value ? fTags.value : "";
+				const tags = tagsRaw.split(/[,，、\s]+/).filter(Boolean);
 
 				const item = {
 					id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
@@ -832,7 +1299,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 					url: url,
 					description: desc || "自定义收藏的链接。",
 					category: cat,
-					icon: icon,
+					logo: autoLogo,
 					tags: tags,
 				};
 
@@ -872,6 +1339,74 @@ const subtitle = "我收藏的优质网站与工具导航";
 			closeModal(el.getAttribute("data-close") === "add" ? addModal : codeModal);
 			pendingAction = noop;
 		});
+
+		// 导出备份：把增删结果打包成 JSON 文件下载
+		if (exportBtn) {
+			exportBtn.addEventListener("click", () => {
+				const data = { custom: getCustom(), deleted: getDeleted() };
+				if (!data.custom.length && !data.deleted.length) {
+					toast("当前没有任何增删记录，无需导出");
+					return;
+				}
+				const blob = new Blob([JSON.stringify(data, null, 2)], {
+					type: "application/json",
+				});
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				const d = new Date();
+				const pad = (n) => String(n).padStart(2, "0");
+				a.href = url;
+				a.download =
+					"bookmarks-backup-" +
+					d.getFullYear() +
+					pad(d.getMonth() + 1) +
+					pad(d.getDate()) +
+					".json";
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+				toast("已导出 " + (data.custom.length + data.deleted.length) + " 条记录");
+			});
+		}
+
+		// 导入备份：选文件后经验证码确认再写入
+		if (importBtn && importFile) {
+			importBtn.addEventListener("click", () => importFile.click());
+			importFile.addEventListener("change", () => {
+				const file = importFile.files && importFile.files[0];
+				if (!file) return;
+				const reader = new FileReader();
+				reader.onload = () => {
+					const parsed = parseJson(String(reader.result));
+					if (!parsed) {
+						toast("文件解析失败，不是合法的 JSON");
+						importFile.value = "";
+						return;
+					}
+					const custom = Array.isArray(parsed.custom) ? parsed.custom : null;
+					const deleted = Array.isArray(parsed.deleted) ? parsed.deleted : null;
+					if (!custom && !deleted) {
+						toast("备份文件格式不对，缺少 custom / deleted 字段");
+						importFile.value = "";
+						return;
+					}
+					const n = (custom ? custom.length : 0) + (deleted ? deleted.length : 0);
+					openCode("导入备份？将覆盖当前的 " + n + " 条增删记录", () => {
+						lsSet(LS_CUSTOM, custom || []);
+						lsSet(LS_DELETED, deleted || []);
+						toast("导入成功，共 " + n + " 条记录");
+						setTimeout(() => window.location.reload(), 700);
+					});
+					importFile.value = "";
+				};
+				reader.onerror = () => {
+					toast("文件读取失败");
+					importFile.value = "";
+				};
+				reader.readAsText(file);
+			});
+		}
 
 		// 恢复默认（同样需要验证码）
 		if (resetBtn) {

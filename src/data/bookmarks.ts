@@ -8,6 +8,7 @@ export interface Bookmark {
 	url: string;
 	category: string;
 	icon?: string; // 可选 iconify 图标名，例如 "mdi:github"，缺省使用 mdi:link
+	logo?: string; // 站点图标 URL，优先于 icon 渲染（页面「添加链接」自动解析后写入）
 	tags?: string[];
 	alias?: string; // 拼音首字母/别名速查，用于快捷搜索（如 "gh" → GitHub、"blbl" → 哔哩哔哩）
 }
