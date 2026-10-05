@@ -96,9 +96,12 @@ const subtitle = "我收藏的优质网站与工具导航";
 							data-category={b.category}
 							data-id={b.id}
 							data-source="builtin"
+							data-tags={(b.tags || []).join(" ")}
+							data-logo={b.logo || ""}
+							data-alias={b.alias || ""}
 						>
 							<a href={b.url} target="_blank" rel="noopener noreferrer" class="block">
-								<div class="flex items-start gap-3 p-4 pr-20">
+								<div class="flex items-start gap-3 p-4 pr-28">
 									<div class="bm-icon flex items-center justify-center w-11 h-11 rounded-xl
 										bg-(--primary)/10 text-(--primary) text-2xl shrink-0
 										group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
@@ -134,12 +137,20 @@ const subtitle = "我收藏的优质网站与工具导航";
 							</a>
 							<div class="bm-card-actions">
 								<button
-									class="bm-act"
+									class="bm-act bm-copy"
 									data-copy={b.url}
 									aria-label={"复制链接 " + b.title}
 									title="复制链接地址"
 								>
 									<iconify-icon icon="material-symbols:content-copy" class="text-base"></iconify-icon>
+								</button>
+								<button
+									class="bm-act bm-edit"
+									data-edit={b.id}
+									aria-label={"编辑链接 " + b.title}
+									title="编辑此链接"
+								>
+									<iconify-icon icon="material-symbols:edit-outline" class="text-base"></iconify-icon>
 								</button>
 								<button
 									class="bm-del"
@@ -169,7 +180,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 				<div class="bm-modal-mask" data-close="add"></div>
 				<div class="bm-modal-panel">
 					<div class="flex items-center justify-between mb-4">
-						<h3 class="text-xl font-bold text-90">添加链接</h3>
+						<h3 id="bm-add-title" class="text-xl font-bold text-90">添加链接</h3>
 						<button class="bm-icon-btn" data-close="add" aria-label="关闭">
 							<iconify-icon icon="material-symbols:close" class="text-xl"></iconify-icon>
 						</button>
@@ -267,12 +278,31 @@ const subtitle = "我收藏的优质网站与工具导航";
 </MainGridLayout>
 
 <style>
+	/* 本项目只有 Tailwind 的 .text-90/.text-60/... 工具类，没有对应的 CSS 变量。
+	   Astro 的 <style> 块不经过 Tailwind 处理，所以在这里用 :global 声明一套明暗两套的取色。 */
+	:global(:root) {
+		--bm-ink: rgba(0, 0, 0, 0.9);
+		--bm-ink-60: rgba(0, 0, 0, 0.6);
+		--bm-ink-50: rgba(0, 0, 0, 0.5);
+		--bm-ink-40: rgba(0, 0, 0, 0.35);
+	}
+	:global(:root.dark) {
+		--bm-ink: rgba(255, 255, 255, 0.9);
+		--bm-ink-60: rgba(255, 255, 255, 0.6);
+		--bm-ink-50: rgba(255, 255, 255, 0.5);
+		--bm-ink-40: rgba(255, 255, 255, 0.4);
+	}
+	/* 原生表单控件（下拉列表、光标、滚动条）跟随主题，否则暗黑下会用 UA 的浅色方案 */
+	:root.dark .bm-modal-panel {
+		color-scheme: dark;
+	}
+
 	.bm-chip {
 		padding: 0.375rem 0.875rem;
 		border-radius: 9999px;
 		font-size: 0.875rem;
 		border: 1px solid var(--line-divider);
-		color: var(--text-60, #888);
+		color: var(--bm-ink-60);
 		transition: all 0.2s ease;
 		cursor: pointer;
 		white-space: nowrap;
@@ -299,7 +329,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 		line-height: 1.25rem;
 		border: 1px solid var(--line-divider);
 		background: rgba(127, 127, 127, 0.08);
-		color: var(--text-60, #888);
+		color: var(--bm-ink-60);
 		opacity: 0.6;
 		transition: opacity 0.2s ease;
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -329,7 +359,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 		border-radius: 9999px;
 		font-size: 0.875rem;
 		border: 1px solid var(--line-divider, #e5e5e5);
-		color: var(--text-60, #888);
+		color: var(--bm-ink-60);
 		background: var(--card-bg, transparent);
 		transition: all 0.2s ease;
 		white-space: nowrap;
@@ -369,7 +399,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 		border-radius: 0.5rem;
 		border: 1px solid var(--line-divider, #e5e5e5);
 		background: var(--card-bg, #fff);
-		color: var(--text-50, #999);
+		color: var(--bm-ink-50);
 		transition: all 0.2s ease;
 		cursor: pointer;
 	}
@@ -453,7 +483,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 		display: block;
 		font-size: 0.8125rem;
 		margin-bottom: 0.375rem;
-		color: var(--text-60, #888);
+		color: var(--bm-ink-60);
 	}
 	.bm-input {
 		width: 100%;
@@ -462,12 +492,16 @@ const subtitle = "我收藏的优质网站与工具导航";
 		font-size: 0.9375rem;
 		border: 1px solid var(--line-divider, #e5e5e5);
 		background: transparent;
-		color: var(--text-90, #222);
+		color: var(--bm-ink);
 		outline: none;
 		transition: border-color 0.2s ease;
 	}
 	.bm-input:focus {
 		border-color: var(--primary, #3b82f6);
+	}
+	.bm-input::placeholder {
+		color: var(--bm-ink-40);
+		opacity: 1;
 	}
 	/* 卡片左上角：有站点 logo 时用图片，没有则回退 iconify 图标 */
 	.bm-logo {
@@ -480,11 +514,11 @@ const subtitle = "我收藏的优质网站与工具导航";
 		margin-top: 0.375rem;
 		font-size: 0.75rem;
 		line-height: 1.5;
-		color: var(--text-40, #aaa);
+		color: var(--bm-ink-60);
 		word-break: break-all;
 	}
 	.bm-fetch-state[data-state="loading"] {
-		color: var(--text-60, #888);
+		color: var(--bm-ink);
 	}
 	.bm-fetch-state[data-state="ok"] {
 		color: var(--primary, #3b82f6);
@@ -509,7 +543,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 		flex-shrink: 0;
 		border-radius: 0.75rem;
 		border: 1px solid var(--line-divider, #e5e5e5);
-		color: var(--text-40, #aaa);
+		color: var(--bm-ink-40);
 		font-size: 1.375rem;
 		overflow: hidden;
 	}
@@ -535,7 +569,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 		top: 50%;
 		transform: translateY(-50%);
 		font-size: 1.125rem;
-		color: var(--text-40, #aaa);
+		color: var(--bm-ink-40);
 		pointer-events: none;
 	}
 	.bm-code-input {
@@ -550,14 +584,14 @@ const subtitle = "我收藏的优质网站与工具导航";
 		border-radius: 0.625rem;
 		font-size: 0.9375rem;
 		border: 1px solid var(--line-divider, #e5e5e5);
-		color: var(--text-60, #888);
+		color: var(--bm-ink-60);
 		background: transparent;
 		transition: all 0.2s ease;
 		cursor: pointer;
 	}
 	.bm-btn:hover {
-		color: var(--text-90, #222);
-		border-color: var(--text-40, #bbb);
+		color: var(--bm-ink);
+		border-color: var(--bm-ink-40);
 	}
 	.bm-btn-primary {
 		background: var(--primary, #3b82f6);
@@ -576,13 +610,13 @@ const subtitle = "我收藏的优质网站与工具导航";
 		width: 2rem;
 		height: 2rem;
 		border-radius: 0.5rem;
-		color: var(--text-50, #999);
+		color: var(--bm-ink-50);
 		transition: all 0.2s ease;
 		cursor: pointer;
 	}
 	.bm-icon-btn:hover {
 		background: rgba(127, 127, 127, 0.12);
-		color: var(--text-90, #222);
+		color: var(--bm-ink);
 	}
 
 	/* 轻提示 */
@@ -624,6 +658,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 	const VERIFY_CODE = "239218";
 	const LS_CUSTOM = "mizuki:bookmarks:custom"; // 自定义添加的链接
 	const LS_DELETED = "mizuki:bookmarks:deleted"; // 已删除的（内置）链接 id
+	const LS_OVERRIDES = "mizuki:bookmarks:overrides"; // 被编辑过的内置链接（按 id 覆盖）
 
 	function lsGet(key, fallback) {
 		try {
@@ -705,6 +740,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 		const fCat = selectOf("bm-f-cat");
 		const fCatNew = inputOf("bm-f-cat-new");
 		const fTags = inputOf("bm-f-tags");
+		const modeTitle = elOf("bm-add-title"); // 弹窗标题：添加 / 编辑
 		const fLogo = imgOf("bm-f-logo");
 		const fetchState = elOf("bm-fetch-state");
 		const glyphRaw = fLogo && fLogo.parentElement
@@ -723,6 +759,11 @@ const subtitle = "我收藏的优质网站与工具导航";
 		let activeCat = "all";
 		let pendingAction = noop; // 验证码通过后要执行的回调
 		let toastSeq = 0;
+		let editingId = ""; // 非空表示正在编辑已有链接
+		let editingSource = "custom";
+		let editingIcon = "mdi:link";
+		let editingAlias = "";
+		let editingCard = null;
 
 		function toast(msg) {
 			const box = toastEl;
@@ -989,6 +1030,48 @@ const subtitle = "我收藏的优质网站与工具导航";
 			return fCatNew && fCatNew.value ? fCatNew.value.trim() : "";
 		}
 
+		// 把 bookmark 数据写进卡片 DOM。新增卡片和编辑保存都走这里，避免两份逻辑跑偏。
+		function fillCard(node, b) {
+			const a = node.querySelector("a");
+			if (a) a.setAttribute("href", b.url);
+			const h3 = node.querySelector("h3");
+			if (h3) h3.textContent = b.title;
+			const p = node.querySelector("p");
+			if (p) p.textContent = b.description || "";
+			const domain = node.querySelector(".bm-domain");
+			if (domain) domain.textContent = shortUrl(b.url);
+			const glyph = node.querySelector(".bm-icon .bm-glyph");
+			if (glyph) glyph.setAttribute("icon", b.icon || "mdi:link");
+			node.dataset.search = searchTextOf(b);
+			node.dataset.category = b.category;
+			node.dataset.tags = (b.tags || []).join(" ");
+			node.dataset.logo = b.logo || "";
+			node.dataset.alias = b.alias || "";
+			const copy = node.querySelector(".bm-copy");
+			if (copy) copy.setAttribute("data-copy", b.url);
+		}
+
+		// 从卡片 DOM 反解出 bookmark（编辑时回填表单用）
+		function cardToBookmark(card) {
+			const a = card.querySelector("a");
+			const h3 = card.querySelector("h3");
+			const p = card.querySelector("p");
+			const glyph = card.querySelector(".bm-icon .bm-glyph");
+			const tagsRaw = card.getAttribute("data-tags") || "";
+			return {
+				id: card.getAttribute("data-id") || "",
+				source: card.getAttribute("data-source") || "custom",
+				category: card.getAttribute("data-category") || "",
+				title: h3 ? (h3.textContent || "").trim() : "",
+				url: a ? a.getAttribute("href") || "" : "",
+				description: p ? (p.textContent || "").trim() : "",
+				icon: glyph ? glyph.getAttribute("icon") || "mdi:link" : "mdi:link",
+				tags: tagsRaw.split(/\s+/).filter(Boolean),
+				logo: card.getAttribute("data-logo") || "",
+				alias: card.getAttribute("data-alias") || "",
+			};
+		}
+
 		// 用静态卡片作模板克隆出新卡片（保留 astro-cid，样式才生效）
 		function appendCard(b) {
 			if (!cardTemplate) return false;
@@ -1027,16 +1110,11 @@ const subtitle = "我收藏的优质网站与工具导航";
 				logoImg.removeAttribute("src");
 				logoImg.classList.add("hidden");
 			}
-			const h3 = node.querySelector("h3");
-			if (h3) h3.textContent = b.title;
-			const p = node.querySelector("p");
-			if (p) p.textContent = b.description || "";
-			const domain = node.querySelector(".bm-domain");
-			if (domain) domain.textContent = shortUrl(b.url);
+			fillCard(node, b);
 			const del = node.querySelector(".bm-del");
 			if (del) del.setAttribute("data-del", b.id);
-			const copy = node.querySelector(".bm-act");
-			if (copy) copy.setAttribute("data-copy", b.url);
+			const edit = node.querySelector(".bm-edit");
+			if (edit) edit.setAttribute("data-edit", b.id);
 			grid.appendChild(node);
 			return true;
 		}
@@ -1046,6 +1124,9 @@ const subtitle = "我收藏的优质网站与工具导航";
 		}
 		function getDeleted() {
 			return lsGet(LS_DELETED, []);
+		}
+		function getOverrides() {
+			return lsGet(LS_OVERRIDES, []);
 		}
 		function markDeleted(id) {
 			const list = getDeleted();
@@ -1057,6 +1138,12 @@ const subtitle = "我收藏的优质网站与工具导航";
 				LS_DELETED,
 				getDeleted().filter((x) => x !== id),
 			);
+		}
+		function setOverride(b) {
+			const rest = getOverrides().filter((x) => x && x.id !== b.id);
+			const list = rest;
+			list.push(b);
+			lsSet(LS_OVERRIDES, list);
 		}
 
 		// 新增分类时补一个筛选 chip（同样用克隆保证 scoped 样式生效）
@@ -1086,6 +1173,16 @@ const subtitle = "我收藏的优质网站与工具导航";
 			});
 			getCustom().forEach((b) => {
 				if (deleted.indexOf(b.id) === -1 && appendCard(b)) addChip(b.category);
+			});
+			// 被编辑过的内置链接：用保存后的数据覆盖原卡片
+			getOverrides().forEach((b) => {
+				if (!b || !b.id) return;
+				if (deleted.indexOf(b.id) !== -1) return;
+				Array.from(
+					grid.querySelectorAll('.bm-card[data-source="builtin"]'),
+				).forEach((card) => {
+					if (card.getAttribute("data-id") === b.id) fillCard(card, b);
+				});
 			});
 		}
 
@@ -1158,7 +1255,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 		// 复制链接（委托）
 		grid.addEventListener("click", (e) => {
 			const from = e.target instanceof Element ? e.target : null;
-			const btn = from ? from.closest(".bm-act") : null;
+			const btn = from ? from.closest(".bm-copy") : null;
 			if (!(btn instanceof HTMLElement) || !grid.contains(btn)) return;
 			e.preventDefault();
 			e.stopPropagation();
@@ -1216,9 +1313,85 @@ const subtitle = "我收藏的优质网站与工具导航";
 			});
 		});
 
+		// 把已有链接的数据回填到表单（编辑用）
+		function fillForm(b, heading) {
+			if (fetchTimer) window.clearTimeout(fetchTimer);
+			fetchSeq++; // 丢弃上一次打开弹窗时可能仍在途的请求
+			if (fUrl) delete fUrl.dataset.fetched;
+			if (fTitle) fTitle.value = b.title || "";
+			if (fUrl) fUrl.value = b.url || "";
+			if (fDesc) fDesc.value = b.description || "";
+			if (fTags) fTags.value = (b.tags || []).join(", ");
+			autoTitle = b.title || "";
+			autoDesc = b.description || "";
+			autoLogo = b.logo || "";
+			showLogo(b.logo || "");
+			setFetchState(
+				"idle",
+				b.logo ? "已回填原站点图标。" : "改动网址后会重新拉取站点信息。",
+			);
+			if (fCat) {
+				rebuildCatOptions();
+				if (fCatNew) fCatNew.value = "";
+				const opts = Array.from(fCat.options).map((o) => o.value);
+				if (b.category && opts.indexOf(b.category) !== -1) {
+					fCat.value = b.category;
+				} else if (b.category) {
+					fCat.value = NEW_CAT;
+					if (fCatNew) fCatNew.value = b.category;
+				}
+			}
+			syncCatNew(false);
+			if (modeTitle) modeTitle.textContent = heading;
+		}
+
+		// 编辑按钮（委托）：内置链接也能改，结果存进 overrides
+		grid.addEventListener("click", (e) => {
+			const from = e.target instanceof Element ? e.target : null;
+			const btn = from ? from.closest(".bm-edit") : null;
+			if (!(btn instanceof HTMLElement) || !grid.contains(btn)) return;
+			e.preventDefault();
+			e.stopPropagation();
+			const cardEl = btn.closest(".bm-card");
+			if (!(cardEl instanceof HTMLElement)) return;
+			const base = cardToBookmark(cardEl);
+			if (!base.id) return;
+			editingId = base.id;
+			editingSource = base.source === "builtin" ? "builtin" : "custom";
+			editingIcon = base.icon || "mdi:link";
+			editingAlias = base.alias || "";
+			editingCard = cardEl;
+			const b = {
+				id: base.id,
+				source: base.source,
+				category: base.category,
+				title: base.title,
+				url: base.url,
+				description: base.description,
+				icon: base.icon,
+				tags: base.tags,
+				logo: base.logo,
+				alias: base.alias,
+			};
+			fillForm(b, "编辑链接");
+			openModal(addModal);
+			setTimeout(() => {
+				if (fTitle) {
+					fTitle.focus();
+					fTitle.select();
+				}
+			}, 60);
+		});
+
 		// 添加链接：打开表单（只需要填网址，名称/简介/图标由解析填充）
 		if (addBtn) {
 			addBtn.addEventListener("click", () => {
+				editingId = "";
+				editingSource = "custom";
+				editingIcon = "mdi:link";
+				editingAlias = "";
+				editingCard = null;
+				if (modeTitle) modeTitle.textContent = "添加链接";
 				[fTitle, fUrl, fDesc, fCatNew, fTags].forEach((el) => {
 					if (el) el.value = "";
 				});
@@ -1293,27 +1466,54 @@ const subtitle = "我收藏的优质网站与工具导航";
 				const tagsRaw = fTags && fTags.value ? fTags.value : "";
 				const tags = tagsRaw.split(/[,，、\s]+/).filter(Boolean);
 
+				const isEdit = editingId !== "";
 				const item = {
-					id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+					id: isEdit
+						? editingId
+						: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
 					title: title,
 					url: url,
-					description: desc || "自定义收藏的链接。",
+					description: desc || (isEdit ? "" : "自定义收藏的链接。"),
 					category: cat,
 					logo: autoLogo,
+					icon: editingIcon,
+					alias: editingAlias,
 					tags: tags,
 				};
 
 				closeModal(addModal);
-				openCode('添加链接「' + title + '」？', () => {
-					const list = getCustom();
-					list.push(item);
-					lsSet(LS_CUSTOM, list);
-					unmarkDeleted(item.id);
-					appendCard(item);
-					addChip(cat);
-					toast("已添加：" + title);
-					applyFilter();
-				});
+				if (isEdit) {
+					openCode("保存对「" + title + "」的修改？", () => {
+						if (editingSource === "builtin") {
+							setOverride(item);
+						} else {
+							lsSet(
+								LS_CUSTOM,
+								getCustom().map((x) => (x.id === editingId ? item : x)),
+							);
+						}
+						const node = editingCard;
+						if (node) fillCard(node, item);
+						addChip(cat);
+						toast("已保存修改：" + title);
+						editingId = "";
+						editingCard = null;
+						editingSource = "custom";
+						editingAlias = "";
+						applyFilter();
+					});
+				} else {
+					openCode("添加链接「" + title + "」？", () => {
+						const list = getCustom();
+						list.push(item);
+						lsSet(LS_CUSTOM, list);
+						unmarkDeleted(item.id);
+						appendCard(item);
+						addChip(cat);
+						toast("已添加：" + title);
+						applyFilter();
+					});
+				}
 			});
 		}
 
@@ -1343,9 +1543,15 @@ const subtitle = "我收藏的优质网站与工具导航";
 		// 导出备份：把增删结果打包成 JSON 文件下载
 		if (exportBtn) {
 			exportBtn.addEventListener("click", () => {
-				const data = { custom: getCustom(), deleted: getDeleted() };
-				if (!data.custom.length && !data.deleted.length) {
-					toast("当前没有任何增删记录，无需导出");
+				const data = {
+					custom: getCustom(),
+					deleted: getDeleted(),
+					overrides: getOverrides(),
+				};
+				const changes =
+					data.custom.length + data.deleted.length + data.overrides.length;
+				if (changes === 0) {
+					toast("当前没有任何增删或编辑记录，无需导出");
 					return;
 				}
 				const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -1366,7 +1572,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 				a.click();
 				document.body.removeChild(a);
 				URL.revokeObjectURL(url);
-				toast("已导出 " + (data.custom.length + data.deleted.length) + " 条记录");
+				toast("已导出 " + changes + " 条记录");
 			});
 		}
 
@@ -1386,15 +1592,22 @@ const subtitle = "我收藏的优质网站与工具导航";
 					}
 					const custom = Array.isArray(parsed.custom) ? parsed.custom : null;
 					const deleted = Array.isArray(parsed.deleted) ? parsed.deleted : null;
-					if (!custom && !deleted) {
+					const overrides = Array.isArray(parsed.overrides)
+						? parsed.overrides
+						: null;
+					if (!custom && !deleted && !overrides) {
 						toast("备份文件格式不对，缺少 custom / deleted 字段");
 						importFile.value = "";
 						return;
 					}
-					const n = (custom ? custom.length : 0) + (deleted ? deleted.length : 0);
-					openCode("导入备份？将覆盖当前的 " + n + " 条增删记录", () => {
+					const n =
+						(custom ? custom.length : 0) +
+						(deleted ? deleted.length : 0) +
+						(overrides ? overrides.length : 0);
+					openCode("导入备份？将覆盖当前的 " + n + " 条记录", () => {
 						lsSet(LS_CUSTOM, custom || []);
 						lsSet(LS_DELETED, deleted || []);
+						lsSet(LS_OVERRIDES, overrides || []);
 						toast("导入成功，共 " + n + " 条记录");
 						setTimeout(() => window.location.reload(), 700);
 					});
@@ -1415,6 +1628,7 @@ const subtitle = "我收藏的优质网站与工具导航";
 					try {
 						localStorage.removeItem(LS_CUSTOM);
 						localStorage.removeItem(LS_DELETED);
+						localStorage.removeItem(LS_OVERRIDES);
 					} catch (e) {
 						/* 忽略 */
 					}
