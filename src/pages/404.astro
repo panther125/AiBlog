@@ -1,93 +1,498 @@
 ---
 import { Icon } from "astro-icon/components";
+import { getCollection } from "astro:content";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { getPostUrl } from "../utils/url-utils";
+
+// 构建期就把全部文章的真实链接算好，随机跃迁才能跳到真实存在的页面
+const posts = (await getCollection("posts")).filter((p) => !p.data.draft);
+const links = posts.map((p) => ({ u: getPostUrl(p), t: p.data.title }));
+const linksJson = JSON.stringify(links).replace(/</g, "\\u003c");
 ---
 
 <MainGridLayout
-	title="404"
-	description="Sorry, the page you visited does not exist or has been moved."
+	title="404 · 信号走丢了"
+	description="你访问的页面不在这片星空里，换个方向试试？"
 >
-	<!-- 引入右侧边栏布局管理器 -->
-	<script>
-		import("../scripts/right-sidebar-layout.js");
-	</script>
-	<div
-		class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-96"
-	>
-		<div
-			class="card-base z-10 px-9 py-12 relative w-full flex flex-col items-center justify-center text-center"
-		>
-			<!-- 404 大号数字 -->
-			<div
-				class="text-8xl md:text-9xl font-bold text-(--primary) opacity-20 mb-4"
+	<div class="e404 card-base relative overflow-hidden px-6 py-10 md:px-12 md:py-14">
+		<canvas id="e404-sky" class="e404-sky" aria-hidden="true"></canvas>
+
+		<div class="relative z-10 flex flex-col items-center text-center">
+			<!-- 故障风 404（点一下有彩蛋） -->
+			<button
+				id="e404-glitch"
+				class="e404-glitch"
+				data-text="404"
+				data-posts={linksJson}
+				aria-label="404，点一下试试修复"
+				title="点一下，也许能修好"
 			>
 				404
-			</div>
+			</button>
 
-			<!-- 404 图标 -->
-			<div class="mb-6">
-				<Icon
-					name="material-symbols:error-outline"
-					class="text-6xl text-(--primary)"
-				/>
-			</div>
-
-			<!-- 标题 -->
-			<h1 class="text-3xl md:text-4xl font-bold mb-4 text-90">
-				Page Not Found
+			<h1 class="text-2xl md:text-3xl font-bold text-90 mt-2">
+				这片星空里没有你要找的那颗
 			</h1>
 
-			<!-- 描述 -->
-			<p class="text-lg text-75 mb-8 max-w-md">
-				Sorry, the page you visited does not exist or has been moved.
+			<p id="e404-quip" class="e404-quip text-60 mt-3 max-w-md min-h-6">
+				页面大概是去异世界转生了。
 			</p>
 
-			<!-- 返回首页按钮 -->
-			<a
-				href="/"
-				class="inline-flex items-center gap-2 px-6 py-3 bg-(--primary) text-white rounded-(--radius-large) hover:opacity-95 transition-colors transition-transform duration-200 font-medium"
-			>
-				<Icon name="material-symbols:home" class="text-xl" />
-				Back to Home
-			</a>
+			<!-- 终端窗口：把真实访问路径打出来 -->
+			<div class="e404-term mt-8 w-full max-w-lg text-left">
+				<div class="e404-term-bar">
+					<span class="e404-dot e404-dot-r"></span>
+					<span class="e404-dot e404-dot-y"></span>
+					<span class="e404-dot e404-dot-g"></span>
+					<span class="e404-term-title">bash — 404.log</span>
+				</div>
+				<pre id="e404-term-body" class="e404-term-body"></pre>
+			</div>
 
-			<!-- 装饰性元素 -->
-			<div class="absolute top-4 left-4 opacity-10">
-				<Icon
-					name="material-symbols:sentiment-sad"
-					class="text-4xl text-(--primary)"
-				/>
+			<!-- 三个出口 -->
+			<div class="flex flex-wrap items-center justify-center gap-3 mt-8">
+				<a href="/" class="e404-btn e404-btn-primary">
+					<Icon name="material-symbols:home" class="text-xl" />
+					返回基地
+				</a>
+				<a href="/archive/" class="e404-btn">
+					<Icon name="material-symbols:inventory-2-outline" class="text-xl" />
+					去归档翻翻
+				</a>
+				<button id="e404-random" class="e404-btn">
+					<Icon name="material-symbols:casino-outline" class="text-xl" />
+					随机跃迁
+				</button>
 			</div>
-			<div class="absolute bottom-4 right-4 opacity-10">
-				<Icon
-					name="material-symbols:search-off"
-					class="text-4xl text-(--primary)"
-				/>
-			</div>
+
+			<p class="text-40 text-xs mt-6">
+				小提示：点一下上面那个 404，说不定能把它修好。
+			</p>
 		</div>
 	</div>
+
+	<script>
+		// 引入右侧边栏布局管理器
+		import("../scripts/right-sidebar-layout.js");
+
+		// ===== 404 页的星空 / 打字机 / 随机跃迁 / 修复彩蛋 =====
+		// 注意：本文件只允许一个 <script> 块，且必须写纯 JS（出现 TS 断言/泛型会被静默丢弃）
+		const QUIPS = [
+			"页面大概是去异世界转生了。",
+			"它和薛定谔的猫一起失踪了 —— 在你打开之前，它可能还在。",
+			"路由表翻遍了，也没找到这个 URL 的影子。",
+			"这个链接比我的头发掉得还彻底。",
+			"缓存说它见过，硬盘说没有，我信硬盘。",
+			"你在找的页面，正在另一个分支上快乐地生活着。",
+			"404：Four Oh Four，念快了就像在数星星。",
+			"别找了，它跟我的周末一样一去不返。",
+		];
+
+		const reduceMotion =
+			window.matchMedia &&
+			window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+		function elOf(id) {
+			const el = document.getElementById(id);
+			return el instanceof HTMLElement ? el : null;
+		}
+
+		// 文章链接在构建期写进按钮的 data-posts，静态站没有后端可查
+		function readPosts() {
+			const holder = document.getElementById("e404-glitch");
+			const raw = holder ? holder.getAttribute("data-posts") : "";
+			if (!raw) return [];
+			try {
+				const val = JSON.parse(raw);
+				return Array.isArray(val) ? val : [];
+			} catch (err) {
+				return [];
+			}
+		}
+
+		// 随机吐槽：每次刷新换一句
+		const quipEl = elOf("e404-quip");
+		if (quipEl) {
+			quipEl.textContent = QUIPS[Math.floor(Math.random() * QUIPS.length)];
+		}
+
+		// ===== 终端打字机 =====
+		const termEl = document.getElementById("e404-term-body");
+		if (termEl instanceof HTMLElement) {
+			const term = termEl;
+			const path = window.location.pathname || "/";
+			const lines = [
+				"$ curl -I https://你的博客" + path,
+				"> HTTP/1.1 404 Not Found",
+				"> reason: 页面不存在 / 已移动 / 链接拼错（三选一）",
+				"> hint  : 返回基地，或者随机跃迁到一篇还活着的文章",
+			];
+			if (reduceMotion) {
+				term.textContent = lines.join("\n");
+			} else {
+				let li = 0;
+				let ci = 0;
+				let buf = "";
+				const type = () => {
+					if (li >= lines.length) return;
+					const line = lines[li];
+					if (ci <= line.length) {
+						buf += line.slice(ci - 1 < 0 ? 0 : ci - 1, ci);
+						term.textContent = buf;
+						ci++;
+						window.setTimeout(type, 18);
+						return;
+					}
+					buf += "\n";
+					li++;
+					ci = 0;
+					window.setTimeout(type, 260);
+				};
+				type();
+			}
+		}
+
+		// ===== 星空：轻量 canvas + 鼠标视差 =====
+		const canvasEl = document.getElementById("e404-sky");
+		if (canvasEl instanceof HTMLCanvasElement) {
+			const canvas = canvasEl;
+			const ctx = canvas.getContext("2d");
+			if (ctx) {
+				let w = 0;
+				let h = 0;
+				let stars = [];
+				let mx = 0;
+				let my = 0;
+
+				const resize = () => {
+					const dpr = window.devicePixelRatio || 1;
+					const rect = canvas.getBoundingClientRect();
+					w = rect.width;
+					h = rect.height;
+					canvas.width = Math.floor(w * dpr);
+					canvas.height = Math.floor(h * dpr);
+					ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+					const count = Math.max(28, Math.floor((w * h) / 9000));
+					stars = [];
+					for (let i = 0; i < count; i++) {
+						stars.push({
+							x: Math.random() * w,
+							y: Math.random() * h,
+							r: Math.random() * 1.4 + 0.3,
+							p: Math.random() * Math.PI * 2,
+							s: 0.4 + Math.random() * 1.2,
+						});
+					}
+				};
+
+				const draw = (t) => {
+					ctx.clearRect(0, 0, w, h);
+					for (let i = 0; i < stars.length; i++) {
+						const st = stars[i];
+						const a =
+							0.25 + 0.55 * Math.abs(Math.sin(st.p + (t / 1000) * st.s));
+						ctx.globalAlpha = a;
+						ctx.fillStyle = "#ffffff";
+						ctx.beginPath();
+						ctx.arc(st.x + mx * 6, st.y + my * 6, st.r, 0, Math.PI * 2);
+						ctx.fill();
+					}
+					ctx.globalAlpha = 1;
+					if (!reduceMotion) requestAnimationFrame(draw);
+				};
+
+				resize();
+				window.addEventListener("resize", resize);
+				window.addEventListener("mousemove", (e) => {
+					mx = (e.clientX / window.innerWidth - 0.5) * 2;
+					my = (e.clientY / window.innerHeight - 0.5) * 2;
+				});
+				if (reduceMotion) draw(0);
+				else requestAnimationFrame(draw);
+			}
+		}
+
+		// ===== 随机跃迁：跳到一篇真实存在的文章 =====
+		const randomBtn = elOf("e404-random");
+		if (randomBtn) {
+			randomBtn.addEventListener("click", () => {
+				const list = readPosts();
+				if (!list.length) {
+					window.location.href = "/archive/";
+					return;
+				}
+				const pick = list[Math.floor(Math.random() * list.length)];
+				window.location.href = pick.u || "/archive/";
+			});
+		}
+
+		// ===== 彩蛋：点 404 把它修好 =====
+		const glitch = elOf("e404-glitch");
+		if (glitch) {
+			let fixed = false;
+			glitch.addEventListener("click", () => {
+				if (fixed) return;
+				fixed = true;
+				glitch.textContent = "200";
+				glitch.setAttribute("data-text", "200");
+				glitch.classList.add("e404-fixed");
+
+				// 撒花：往卡片里塞一批小色块，动画结束后自己清掉
+				const host = glitch.parentElement;
+				if (host && !reduceMotion) {
+					const colors = ["#f87171", "#fbbf24", "#34d399", "#60a5fa", "#c084fc"];
+					for (let i = 0; i < 28; i++) {
+						const bit = document.createElement("i");
+						bit.className = "e404-confetti";
+						bit.style.left = 50 + (Math.random() * 40 - 20) + "%";
+						bit.style.background =
+							colors[Math.floor(Math.random() * colors.length)];
+						bit.style.setProperty("--dx", Math.random() * 220 - 110 + "px");
+						bit.style.setProperty("--dy", Math.random() * 160 + 40 + "px");
+						bit.style.setProperty("--rot", Math.random() * 720 - 360 + "deg");
+						bit.style.animationDelay = Math.random() * 220 + "ms";
+						host.appendChild(bit);
+						window.setTimeout(() => {
+							if (bit.parentNode) bit.parentNode.removeChild(bit);
+						}, 1600);
+					}
+				}
+				window.setTimeout(() => {
+					window.location.href = "/";
+				}, reduceMotion ? 200 : 1500);
+			});
+		}
+
+		// ===== 键盘：Enter 回基地，R 随机跃迁 =====
+		document.addEventListener("keydown", (e) => {
+			const target = e.target;
+			if (target && /INPUT|TEXTAREA|SELECT/.test(target.tagName)) return;
+			if (e.key === "Enter") {
+				window.location.href = "/";
+			} else if (e.key === "r" || e.key === "R") {
+				const btn = elOf("e404-random");
+				if (btn) btn.click();
+			}
+		});
+	</script>
 </MainGridLayout>
 
 <style>
-	/* 添加一些动画效果 */
-	.card-base {
-		animation: fadeInUp 0.6s ease-out;
+	.e404 {
+		min-height: 30rem;
+		border: 1px solid var(--line-divider);
 	}
 
-	@keyframes fadeInUp {
-		from {
+	/* 星空铺满卡片，压在内容下面 */
+	.e404-sky {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0.5;
+		pointer-events: none;
+	}
+	:global(:root:not(.dark)) .e404-sky {
+		opacity: 0.25;
+		mix-blend-mode: multiply;
+	}
+
+	/* 故障风 404：两层错位 + 抖动 */
+	.e404-glitch {
+		position: relative;
+		display: inline-block;
+		font-size: clamp(4.5rem, 16vw, 9rem);
+		font-weight: 900;
+		line-height: 1;
+		letter-spacing: 0.05em;
+		color: var(--primary);
+		background: none;
+		border: none;
+		cursor: pointer;
+		text-shadow: 0 0 32px rgba(var(--primary-rgb), 0.25);
+	}
+	.e404-glitch::before,
+	.e404-glitch::after {
+		content: attr(data-text);
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+	.e404-glitch::before {
+		color: #22d3ee;
+		animation: e404-shift-a 3.2s infinite steps(2, end);
+	}
+	.e404-glitch::after {
+		color: #f472b6;
+		animation: e404-shift-b 2.6s infinite steps(2, end);
+	}
+	.e404-glitch:hover {
+		transform: translateY(-2px);
+	}
+	.e404-fixed {
+		color: #34d399;
+		text-shadow: 0 0 32px rgba(52, 211, 153, 0.35);
+	}
+	.e404-fixed::before,
+	.e404-fixed::after {
+		animation: none;
+		opacity: 0.25;
+		color: #34d399;
+	}
+
+	@keyframes e404-shift-a {
+		0%,
+		92%,
+		100% {
+			transform: translate(0, 0);
+			clip-path: inset(0 0 0 0);
 			opacity: 0;
-			transform: translateY(30px);
+		}
+		93% {
+			transform: translate(-3px, 1px);
+			clip-path: inset(10% 0 55% 0);
+			opacity: 0.75;
+		}
+		96% {
+			transform: translate(3px, -2px);
+			clip-path: inset(45% 0 20% 0);
+			opacity: 0.7;
+		}
+	}
+	@keyframes e404-shift-b {
+		0%,
+		90%,
+		100% {
+			transform: translate(0, 0);
+			clip-path: inset(0 0 0 0);
+			opacity: 0;
+		}
+		91% {
+			transform: translate(3px, 2px);
+			clip-path: inset(60% 0 10% 0);
+			opacity: 0.7;
+		}
+		94% {
+			transform: translate(-2px, -1px);
+			clip-path: inset(25% 0 45% 0);
+			opacity: 0.6;
+		}
+	}
+
+	.e404-quip {
+		font-size: 0.95rem;
+	}
+
+	/* 终端窗口 */
+	.e404-term {
+		border: 1px solid var(--line-divider);
+		border-radius: var(--radius-large, 0.75rem);
+		background: rgba(0, 0, 0, 0.35);
+		overflow: hidden;
+	}
+	:global(:root:not(.dark)) .e404-term {
+		background: rgba(15, 23, 42, 0.88);
+	}
+	.e404-term-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.5rem 0.75rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+	}
+	.e404-dot {
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 9999px;
+		display: inline-block;
+	}
+	.e404-dot-r {
+		background: #f87171;
+	}
+	.e404-dot-y {
+		background: #fbbf24;
+	}
+	.e404-dot-g {
+		background: #34d399;
+	}
+	.e404-term-title {
+		margin-left: 0.5rem;
+		font-size: 0.75rem;
+		color: rgba(255, 255, 255, 0.55);
+	}
+	.e404-term-body {
+		margin: 0;
+		padding: 0.9rem 1rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.8rem;
+		line-height: 1.7;
+		color: #d1fae5;
+		white-space: pre-wrap;
+		word-break: break-all;
+		min-height: 7.5rem;
+	}
+
+	/* 按钮 */
+	.e404-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1.1rem;
+		border-radius: 9999px;
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+		color: var(--bm-ink, rgba(0, 0, 0, 0.9));
+		font-size: 0.9rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition:
+			transform 0.2s ease,
+			border-color 0.2s ease,
+			color 0.2s ease;
+	}
+	.e404-btn:hover {
+		transform: translateY(-2px);
+		border-color: var(--primary);
+		color: var(--primary);
+	}
+	.e404-btn-primary {
+		background: var(--primary);
+		border-color: var(--primary);
+		color: #fff;
+	}
+	.e404-btn-primary:hover {
+		color: #fff;
+		opacity: 0.92;
+	}
+
+	/* 彩蛋撒花（JS 动态插入，必须 :global 才带得上样式） */
+	:global(.e404-confetti) {
+		position: absolute;
+		top: 4.5rem;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 2px;
+		pointer-events: none;
+		animation: e404-fall 1.2s ease-out forwards;
+	}
+	@keyframes e404-fall {
+		from {
+			opacity: 1;
+			transform: translate(0, 0) rotate(0deg);
 		}
 		to {
-			opacity: 1;
-			transform: translateY(0);
+			opacity: 0;
+			transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
 		}
 	}
 
-	/* 按钮悬停效果 */
-	a:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+	@media (prefers-reduced-motion: reduce) {
+		.e404-glitch::before,
+		.e404-glitch::after {
+			animation: none;
+		}
+		.e404-btn:hover {
+			transform: none;
+		}
 	}
 </style>

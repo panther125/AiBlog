@@ -21,15 +21,5 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		url: "/projects/",
 		icon: "material-symbols:work",
 	},
-	[LinkPreset.Skills]: {
-		name: "Skills",
-		url: "/skills/",
-		icon: "material-symbols:psychology",
-	},
-	[LinkPreset.Timeline]: {
-		name: "Timeline",
-		url: "/timeline/",
-		icon: "material-symbols:timeline",
-	},
 };
 

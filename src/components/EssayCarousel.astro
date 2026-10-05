@@ -1,0 +1,227 @@
+---
+/**
+ * 即刻短文轮播条
+ * 设计来源：旧博客首页的 bbTimeList（左侧 logo + 中间 swiper 轮播 + 右侧跳转箭头）
+ */
+import { essaysData } from "../data/essays";
+---
+
+<div
+	id="essay-bar"
+	class="essay-bar card-base flex items-center gap-3 px-4 py-3 mb-4 onload-animation"
+>
+	<div class="essay-logo shrink-0" title="即刻短文">
+		<iconify-icon icon="material-symbols:format-quote-rounded"></iconify-icon>
+	</div>
+
+	<div class="essay-viewport flex-1 min-w-0">
+		{
+			essaysData.map((item, i) => (
+				<div class:list={["essay-slide", i === 0 && "on"]} data-i={i}>
+					<p class="essay-text text-90">
+						{item.text}
+						{item.from && <span class="essay-from text-60">— {item.from}</span>}
+					</p>
+				</div>
+			))
+		}
+	</div>
+
+	<div class="essay-ctrl shrink-0 flex items-center gap-1">
+		<span id="essay-dots" class="essay-dots hidden sm:flex">
+			{
+				essaysData.map((_, i) => (
+					<button
+						class:list={["essay-dot", i === 0 && "on"]}
+						data-goto={i}
+						aria-label={"查看第 " + (i + 1) + " 条短文"}
+					></button>
+				))
+			}
+		</span>
+		<button id="essay-prev" class="essay-btn text-60" aria-label="上一条短文">
+			<iconify-icon icon="material-symbols:chevron-left-rounded"></iconify-icon>
+		</button>
+		<button id="essay-next" class="essay-btn text-60" aria-label="下一条短文">
+			<iconify-icon icon="material-symbols:chevron-right-rounded"></iconify-icon>
+		</button>
+	</div>
+</div>
+
+<style>
+	.essay-bar {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.essay-logo {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 999px;
+		background: var(--primary);
+		color: #fff;
+		font-size: 1.35rem;
+		flex-shrink: 0;
+	}
+
+	.essay-logo iconify-icon {
+		color: #fff;
+	}
+
+	.essay-viewport {
+		position: relative;
+		min-height: 3.25rem;
+		display: flex;
+		align-items: center;
+	}
+
+	/* 所有条目叠在同一位置，靠 .on 控制显隐，避免切换时高度跳动 */
+	.essay-slide {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		opacity: 0;
+		transform: translateY(0.5rem);
+		pointer-events: none;
+		transition:
+			opacity 0.45s ease,
+			transform 0.45s ease;
+	}
+
+	.essay-slide.on {
+		opacity: 1;
+		transform: translateY(0);
+		pointer-events: auto;
+	}
+
+	.essay-text {
+		font-size: 0.95rem;
+		line-height: 1.6;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.essay-from {
+		margin-left: 0.35rem;
+		font-size: 0.8rem;
+		white-space: nowrap;
+	}
+
+	.essay-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.9rem;
+		height: 1.9rem;
+		border-radius: 999px;
+		border: 1px solid var(--line-divider);
+		background: transparent;
+		font-size: 1.1rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.essay-btn:hover {
+		border-color: var(--primary);
+		color: var(--primary);
+	}
+
+	.essay-dots {
+		align-items: center;
+		gap: 0.3rem;
+		margin-right: 0.4rem;
+	}
+
+	.essay-dot {
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 999px;
+		border: 0;
+		padding: 0;
+		background: var(--line-divider);
+		cursor: pointer;
+		transition: all 0.25s ease;
+	}
+
+	.essay-dot.on {
+		width: 1.1rem;
+		background: var(--primary);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.essay-slide {
+			transition: none;
+			transform: none;
+		}
+	}
+</style>
+
+<script>
+	(function () {
+		var bar = document.getElementById("essay-bar");
+		if (!bar) return;
+		var slides = Array.prototype.slice.call(bar.querySelectorAll(".essay-slide"));
+		var dots = Array.prototype.slice.call(bar.querySelectorAll(".essay-dot"));
+		if (slides.length === 0) return;
+
+		var idx = 0;
+		var timer = 0;
+		var reduced =
+			window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+		function show(next) {
+			idx = (next + slides.length) % slides.length;
+			for (var i = 0; i < slides.length; i++) {
+				if (i === idx) slides[i].classList.add("on");
+				else slides[i].classList.remove("on");
+				if (dots[i]) {
+					if (i === idx) dots[i].classList.add("on");
+					else dots[i].classList.remove("on");
+				}
+			}
+		}
+
+		function start() {
+			stop();
+			if (reduced || slides.length < 2) return;
+			timer = window.setInterval(function () {
+				show(idx + 1);
+			}, 6000);
+		}
+
+		function stop() {
+			if (timer) {
+				window.clearInterval(timer);
+				timer = 0;
+			}
+		}
+
+		var prev = document.getElementById("essay-prev");
+		var next = document.getElementById("essay-next");
+		if (prev) prev.addEventListener("click", function () { show(idx - 1); start(); });
+		if (next) next.addEventListener("click", function () { show(idx + 1); start(); });
+
+		var dotWrap = document.getElementById("essay-dots");
+		if (dotWrap) {
+			dotWrap.addEventListener("click", function (e) {
+				var t = e.target instanceof Element ? e.target : null;
+				if (!t) return;
+				var g = t.getAttribute("data-goto");
+				if (g === null) return;
+				show(Number(g));
+				start();
+			});
+		}
+
+		bar.addEventListener("mouseenter", stop);
+		bar.addEventListener("mouseleave", start);
+
+		start();
+	})();
+</script>

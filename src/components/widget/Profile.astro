@@ -5,6 +5,24 @@ import { i18n, I18nKey } from "../../i18n/translation";
 import { url } from "../../utils/url-utils";
 import ImageWrapper from "../misc/ImageWrapper.astro";
 import TypewriterText from "../TypewriterText.astro";
+import {
+	getCategoryList,
+	getSortedPosts,
+	getTagList,
+} from "../../utils/content-utils";
+
+// 站点内容统计（设计借鉴旧博客 card-info-data 的三宫格）
+const postCount = (await getSortedPosts()).length;
+const tagList = await getTagList();
+const categoryList = await getCategoryList();
+const topTag = [...tagList].sort((a, b) => b.count - a.count)[0];
+const topCategory = [...categoryList].sort((a, b) => b.count - a.count)[0];
+const tagHref = topTag
+	? url(`/archive/?tag=${encodeURIComponent(topTag.name.trim())}`)
+	: url("/archive/");
+const categoryHref = topCategory
+	? url(`/archive/?category=${encodeURIComponent(topCategory.name.trim())}`)
+	: url("/archive/");
 ---
 
 <div class="card-base p-3">
@@ -34,12 +52,28 @@ import TypewriterText from "../TypewriterText.astro";
                 profileConfig.bio
             )}
         </div>
-        
+
+        <!-- 内容统计三宫格：文章 / 标签 / 分类 -->
+        <div class="profile-stats">
+            <a href={url('/archive/')} class="profile-stat" aria-label={`共 ${postCount} 篇文章`}>
+                <span class="profile-stat-num">{postCount}</span>
+                <span class="profile-stat-label">文章</span>
+            </a>
+            <a href={tagHref} class="profile-stat" aria-label={`共 ${tagList.length} 个标签`}>
+                <span class="profile-stat-num">{tagList.length}</span>
+                <span class="profile-stat-label">标签</span>
+            </a>
+            <a href={categoryHref} class="profile-stat" aria-label={`共 ${categoryList.length} 个分类`}>
+                <span class="profile-stat-num">{categoryList.length}</span>
+                <span class="profile-stat-label">分类</span>
+            </a>
+        </div>
+
         <div class="flex flex-wrap gap-2 justify-center mb-1">
             {profileConfig.links.length > 1 && profileConfig.links.map(item =>
-                <a rel="me" aria-label={item.name} href={item.url} target="_blank" 
-                   class="btn-regular rounded-lg h-10 w-10 active:scale-90">
-                    <Icon name={item.icon} class="text-[1.5rem]"></Icon>
+                <a rel="me" aria-label={item.name} href={item.url} target="_blank"
+                   class="btn-regular rounded-lg h-10 w-10 active:scale-90 group/social transition-all duration-300 hover:-translate-y-0.5 hover:text-(--primary) dark:hover:text-(--primary)">
+                    <Icon name={item.icon} class="text-[1.5rem] transition-transform duration-300 group-hover/social:scale-110"></Icon>
                 </a>
             )}
             {profileConfig.links.length == 1 && 
@@ -110,3 +144,43 @@ import TypewriterText from "../TypewriterText.astro";
         fetchSiteStats();
     }
 </script>
+<style>
+    /* 内容统计三宫格（借鉴旧博客 card-info-data） */
+    .profile-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.25rem;
+        margin: 0.5rem 0 0.75rem;
+        padding: 0.5rem 0;
+        border-top: 1px dashed var(--line-divider);
+        border-bottom: 1px dashed var(--line-divider);
+    }
+
+    .profile-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.1rem;
+        padding: 0.25rem 0;
+        border-radius: 0.75rem;
+        text-decoration: none;
+        transition: background-color 0.25s ease;
+    }
+
+    .profile-stat:hover {
+        background: color-mix(in oklab, var(--primary) 10%, transparent);
+    }
+
+    .profile-stat-num {
+        font-size: 1.15rem;
+        font-weight: 800;
+        line-height: 1.2;
+        color: var(--primary);
+    }
+
+    .profile-stat-label {
+        font-size: 0.72rem;
+        color: var(--text-color-50, #888);
+    }
+</style>

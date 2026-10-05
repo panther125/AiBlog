@@ -595,6 +595,24 @@ const transparentClass = shouldEnableTransparency
     <div id="navbar-wrapper" class="pointer-events-auto sticky top-0 transition-all">
         <Navbar></Navbar>
     </div>
+
+    <!-- 向下滚动指示器（借鉴旧博客 page-header 的 #scroll-down 呼吸跳跃箭头）。
+         必须挂在 #top-row（z-50）这一层：如果放进 #banner-wrapper（z-10），
+         它的层叠上下文会被外面 z-30 的主内容面板压住，箭头看得见却点不到。 -->
+    {showHomeText && (
+        <a
+            id="scroll-down"
+            href="#content-wrapper"
+            aria-label="向下浏览"
+            title="向下浏览"
+            class="pointer-events-auto absolute left-1/2 -translate-x-1/2 z-40 flex justify-center"
+            style={`top: calc(var(--banner-height-home) - ${BANNER_HEIGHT_EXTEND}vh - 12vh);`}
+        >
+            <span class="scroll-down-effects text-white/70 hover:text-white transition-colors">
+                <Icon name="material-symbols:keyboard-double-arrow-down" class="text-4xl drop-shadow-lg" />
+            </span>
+        </a>
+    )}
 </div>
 
 <!-- Banner - 始终渲染，通过 JS 控制显示隐藏 -->
@@ -740,6 +758,8 @@ const transparentClass = shouldEnableTransparency
         </div>
     )}
     
+    <!-- Water waves     )}
+
     <!-- Water waves effect -->
     {siteConfig.banner.waves?.enable && (
         <div class="waves absolute -bottom-px h-[10vh] max-h-37.5 min-h-12.5 w-full md:h-[15vh]" id="header-waves" style="transform: translateZ(0); will-change: fill;">

@@ -47,3 +47,8 @@ src/data/bangumi-data.json
 
 # Bilibili generated data
 src/data/bilibili-data.json
+
+# IDE / assistant temp artifacts
+.trae/
+.workbuddy/
+vibe_images/

@@ -27,8 +27,6 @@ export const I18nKey = {
 	anime: "anime",
 	devices: "devices",
 	projects: "projects",
-	skills: "skills",
-	timeline: "timeline",
 	friends: "friends",
 
 	// Atom/RSS
@@ -68,30 +66,6 @@ export const I18nKey = {
 	animeEmptyLocal: "animeEmptyLocal",
 	animeYear: "animeYear",
 	animeStudio: "animeStudio",
-
-	// Timeline
-	timelineStartDate: "timelineStartDate",
-	timelineDuration: "timelineDuration",
-	timelineEducation: "timelineEducation",
-	timelineWork: "timelineWork",
-	timelineProject: "timelineProject",
-	timelineAchievement: "timelineAchievement",
-	timelineAchievements: "timelineAchievements",
-
-	// Skills
-	skillLevelExpert: "skillLevelExpert",
-	skillLevelAdvanced: "skillLevelAdvanced",
-	skillLevelIntermediate: "skillLevelIntermediate",
-	skillLevelBeginner: "skillLevelBeginner",
-	skillYears: "skillYears",
-	skillsExpert: "skillsExpert",
-	skillsAdvanced: "skillsAdvanced",
-	skillsIntermediate: "skillsIntermediate",
-	skillsBeginner: "skillsBeginner",
-	skillsProjects: "skillsProjects",
-	skillsByLevel: "skillsByLevel",
-	skillsByCategory: "skillsByCategory",
-	skillsTotal: "skillsTotal",
 
 	// Projects
 	projectsWeb: "projectsWeb",

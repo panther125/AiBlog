@@ -1,5 +1,6 @@
 ﻿---
 import ArchivePanel from "@components/ArchivePanel.svelte";
+import CategoryWall from "@components/CategoryWall.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPostsList } from "@utils/content-utils";
 
@@ -32,6 +33,9 @@ const categories = [
 	<script>
 		import("../scripts/right-sidebar-layout.js");
 	</script>
+
+	<!-- 分类卡片墙（设计借鉴旧博客 categoryBar） -->
+	<CategoryWall />
 
 	<!-- 修复：补全缺失的 tags 和 categories 属性 -->
 	<ArchivePanel

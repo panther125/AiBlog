@@ -1,0 +1,374 @@
+---
+import { siteConfig } from "../config";
+import { bilibiliEmbedUrl, getEssayStats, groupEssaysByYear } from "../data/essays";
+import IconifyLoader from "../components/misc/IconifyLoader.astro";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// 检查即刻短文页面是否启用
+if (!siteConfig.featurePages.essays) {
+	return Astro.redirect("/404/");
+}
+
+const groups = groupEssaysByYear();
+const stats = getEssayStats();
+const allIcons = [
+	"material-symbols:sticky-note-2",
+	"material-symbols:play-circle-outline",
+	"material-symbols:videocam-off",
+	"material-symbols:open-in-new",
+	"mdi:fire",
+	"mdi:link",
+];
+const title = "即刻短文";
+const description = "收集生活里打动过自己的句子，来自书籍、电影、音乐和日常。";
+---
+
+<MainGridLayout title={title} description={description}>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<!-- 页面标题 -->
+			<div class="flex flex-col items-start justify-center mb-2">
+				<h1 class="text-4xl font-bold text-90 mb-2 relative
+					before:w-1 before:h-8 before:rounded-md before:bg-(--primary)
+					before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4">
+					即刻短文
+				</h1>
+				<p class="text-lg text-60">{description}</p>
+				<p class="es-stats text-sm text-40">
+					共 {stats.total} 条 · {stats.from}–{stats.to} · {stats.yearCount} 个年份
+				</p>
+			</div>
+
+			<div class="es-groups">
+				{groups.map((group) => (
+					<section class="es-group">
+						<div class="es-rail">
+							<span class="es-year text-90">{group.year}</span>
+							<span class="es-rail-line"></span>
+						</div>
+
+						<div class="es-grid">
+							{group.items.map((item) => (
+								<article class="es-card rounded-(--radius-large) border border-(--line-divider) bg-(--card-bg)">
+									<p class="es-text text-90">{item.content}</p>
+
+									{item.image && (
+										<a class="es-img-link" href={item.image} target="_blank" rel="noopener noreferrer">
+											<img class="es-img" src={item.image} alt={item.from || "短文配图"} loading="lazy" />
+										</a>
+									)}
+
+									{item.video && (item.video.playable === false ? (
+										<div class="es-gone">
+											<iconify-icon icon="material-symbols:videocam-off" class="es-gone-icon"></iconify-icon>
+											<span class="es-gone-text text-60">原视频已从 B 站下架</span>
+											<span class="es-gone-id text-40">{item.video.bvid}</span>
+										</div>
+									) : (
+										<div class:list={["es-video", item.video.cover && "es-video-poster"]} data-embed={bilibiliEmbedUrl(item.video)}>
+											<button type="button" class="es-play" aria-label="播放视频">
+												{item.video.cover && <img class="es-cover" src={item.video.cover} alt="" loading="lazy" />}
+												<span class="es-shade"></span>
+												<iconify-icon icon="material-symbols:play-circle-outline" class="es-play-icon"></iconify-icon>
+												{!item.video.cover && <span class="es-play-text text-60">在 B 站播放</span>}
+											</button>
+										</div>
+									))}
+
+									<div class="es-foot">
+										{item.from ? (
+											<span class="es-from text-60">
+												<iconify-icon icon="mdi:fire" class="es-from-icon"></iconify-icon>
+												<span class="es-from-text">{item.from}</span>
+											</span>
+										) : (
+											<span></span>
+										)}
+										<span class="es-meta">
+											{item.link && (
+												<a class="es-link" href={item.link.url} title={item.link.title || item.link.url} target="_blank" rel="noopener noreferrer external nofollow">
+													<iconify-icon icon="mdi:link"></iconify-icon>
+												</a>
+											)}
+											<time class="es-date text-40" datetime={item.date}>{item.date}</time>
+										</span>
+									</div>
+								</article>
+							))}
+						</div>
+					</section>
+				))}
+			</div>
+		</div>
+	</div>
+	<IconifyLoader preloadIcons={allIcons} />
+</MainGridLayout>
+
+<style>
+	.es-stats {
+		margin-top: 0.25rem;
+	}
+
+	.es-groups {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+		margin-top: 1.75rem;
+	}
+
+	/* 每个年份一组：左侧常驻年份轨 + 右侧双列瀑布流 */
+	.es-group {
+		display: grid;
+		grid-template-columns: 4.5rem minmax(0, 1fr);
+		column-gap: 1.25rem;
+	}
+
+	.es-rail {
+		position: sticky;
+		top: 6.5rem;
+		align-self: start;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.5rem;
+		padding-top: 0.125rem;
+	}
+	.es-year {
+		font-size: 1.5rem;
+		font-weight: 700;
+		line-height: 1.2;
+		font-variant-numeric: tabular-nums;
+	}
+	.es-rail-line {
+		width: 2px;
+		height: 2.25rem;
+		border-radius: 2px;
+		background: var(--primary);
+		opacity: 0.55;
+	}
+
+	.es-grid {
+		columns: 2;
+		column-gap: 1rem;
+	}
+
+	.es-card {
+		break-inside: avoid;
+		-webkit-column-break-inside: avoid;
+		display: flex;
+		flex-direction: column;
+		gap: 0.625rem;
+		margin-bottom: 1rem;
+		padding: 1rem 1.125rem;
+	}
+
+	.es-text {
+		font-size: 0.9375rem;
+		line-height: 1.8;
+		word-break: break-word;
+	}
+
+	.es-img {
+		display: block;
+		width: 100%;
+		aspect-ratio: 3 / 2;
+		object-fit: cover;
+		border-radius: 0.75rem;
+	}
+
+	/* 视频位：点击前只有封面海报 + 播放图标，不产生任何第三方请求 */
+	.es-video {
+		position: relative;
+		width: 100%;
+		padding-top: 56.25%;
+		overflow: hidden;
+		border-radius: 0.75rem;
+		border: 1px dashed var(--line-divider);
+		background: rgba(127, 127, 127, 0.08);
+	}
+	.es-play {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		border: 0;
+		background: transparent;
+		cursor: pointer;
+		transition: background 0.2s ease;
+	}
+	.es-play:hover {
+		background: rgba(127, 127, 127, 0.1);
+	}
+	.es-play-icon {
+		font-size: 1.75rem;
+		color: var(--primary);
+		transition: transform 0.2s ease;
+	}
+	.es-play-text {
+		font-size: 0.875rem;
+	}
+
+	/* 有封面时整块就是一张海报，播放图标浮在渐变压暗层上 */
+	.es-video-poster {
+		border-style: solid;
+		background: #000;
+	}
+	.es-cover {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.3s ease;
+	}
+	.es-shade {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.45));
+		opacity: 0.7;
+		transition: opacity 0.2s ease;
+	}
+	.es-video-poster .es-play-icon {
+		font-size: 2.75rem;
+		color: #fff;
+		filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55));
+	}
+	.es-play:hover .es-cover {
+		transform: scale(1.03);
+	}
+	.es-play:hover .es-shade {
+		opacity: 1;
+	}
+	.es-play:hover .es-play-icon {
+		transform: scale(1.1);
+	}
+
+	/* 已下架的视频只留一条窄提示，不占 16:9 播放器位，也不产生第三方请求 */
+	.es-gone {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.6rem 0.75rem;
+		border-radius: 0.75rem;
+		border: 1px dashed var(--line-divider);
+		background: rgba(127, 127, 127, 0.08);
+	}
+	.es-gone-icon {
+		font-size: 1.1rem;
+		flex-shrink: 0;
+		color: var(--primary);
+	}
+	.es-gone-text {
+		font-size: 0.8125rem;
+	}
+	.es-gone-id {
+		margin-left: auto;
+		font-size: 0.75rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	}
+
+	.es-foot {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		margin-top: auto;
+		padding-top: 0.625rem;
+		border-top: 1px dashed var(--line-divider);
+	}
+	.es-from {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		min-width: 0;
+		font-size: 0.8125rem;
+	}
+	.es-from-text {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.es-from-icon {
+		font-size: 1rem;
+		flex-shrink: 0;
+		color: var(--primary);
+	}
+	.es-meta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-shrink: 0;
+	}
+	.es-link {
+		display: inline-flex;
+		font-size: 1rem;
+		line-height: 1;
+		color: var(--btn-content);
+		transition: color 0.2s ease;
+	}
+	.es-link:hover {
+		color: var(--primary);
+	}
+	.es-date {
+		font-size: 0.8125rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	}
+
+	/* 主题内容列在 lg 以下会变窄，双列瀑布流会把海报压到 150px 左右，提前转单列 */
+	@media (max-width: 1023px) {
+		.es-grid {
+			columns: 1;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.es-group {
+			grid-template-columns: minmax(0, 1fr);
+			row-gap: 0.75rem;
+		}
+		.es-rail {
+			position: static;
+			flex-direction: row;
+			align-items: center;
+		}
+		.es-rail-line {
+			width: 2.25rem;
+			height: 2px;
+		}
+	}
+</style>
+<script>
+	// 点击「在 B 站播放」才插入 iframe，避免首屏拉取第三方播放器
+	(function () {
+		function initEssays() {
+			var root = document.documentElement;
+			if (root.dataset.essaysBound === "true") return;
+			root.dataset.essaysBound = "true";
+
+			document.addEventListener("click", function (e) {
+				var from = e.target instanceof Element ? e.target : null;
+				var btn = from ? from.closest(".es-play") : null;
+				if (!(btn instanceof HTMLElement)) return;
+
+				var box = btn.parentElement instanceof HTMLElement ? btn.parentElement : null;
+				if (!box || !box.dataset.embed) return;
+
+				var frame = document.createElement("iframe");
+				// 运行时插入的元素拿不到 Astro 的 scoped 属性，尺寸只能内联
+				frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0";
+				frame.src = box.dataset.embed;
+				frame.loading = "lazy";
+				frame.setAttribute("scrolling", "no");
+				frame.setAttribute("frameborder", "0");
+				frame.setAttribute("allowfullscreen", "true");
+				frame.setAttribute("title", "B站播放器");
+				box.replaceChild(frame, btn);
+			});
+		}
+
+		document.addEventListener("DOMContentLoaded", initEssays);
+		document.addEventListener("swup:page:view", initEssays);
+	})();
+</script>

@@ -13,6 +13,22 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* 卡片阴影层次：借鉴旧博客 Anzhiyu 主题 —— 静态很淡制造浮起感，
+   hover 只加深阴影、不做位移/缩放（克制不花哨）；暗色下改用更重的黑阴影，
+   避免在深色卡上糊成一团。
+   注意：这两个变量必须写在这里（纯 CSS），不能放进 variables.styl 的 define() ——
+   Stylus 的 define 用 value[0]/value[1] 取亮暗两档，带空格的多段阴影值会被当成列表
+   拆开，编译出来变成 `--card-shadow: 0`。 */
+:root {
+  --card-shadow: 0 3px 8px 6px rgba(7, 17, 27, 0.04);
+  --card-shadow-hover: 0 3px 8px 6px rgba(7, 17, 27, 0.09);
+}
+
+:root.dark {
+  --card-shadow: 0 3px 8px 6px rgba(0, 0, 0, 0.22);
+  --card-shadow-hover: 0 3px 8px 6px rgba(0, 0, 0, 0.34);
+}
+
 /* Migrate from v3 config */
 @theme {
   --font-sans:
@@ -244,8 +260,45 @@ html {
   }
 
   .card-base {
-    @apply rounded-(--radius-large) overflow-hidden bg-(--card-bg) transition-colors duration-150;
+    @apply rounded-(--radius-large) overflow-hidden bg-(--card-bg);
+    transition: background-color 0.15s ease, box-shadow 0.3s ease;
+    box-shadow: var(--card-shadow);
   }
+
+  /* hover 只加深阴影、不做位移（借鉴旧博客 Anzhiyu 主题的克制做法）。
+     嵌套在卡片里的内层卡片不参与 hover，避免整块一起变深、层次糊掉 */
+  .card-base:not(.card-base .card-base):hover {
+    box-shadow: var(--card-shadow-hover);
+  }
+
+  /* 向下滚动指示器（借鉴 Anzhiyu 的 #scroll-down + scroll-down-effects） */
+  @keyframes scroll-down-effect {
+    0% {
+      top: 0;
+      opacity: 0.4;
+    }
+    50% {
+      top: -16px;
+      opacity: 1;
+    }
+    100% {
+      top: 0;
+      opacity: 0.4;
+    }
+  }
+
+  .scroll-down-effects {
+    position: relative;
+    animation: scroll-down-effect 1.5s infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-down-effects {
+      animation: none;
+      opacity: 0.9;
+    }
+  }
+
   .card-base-transparent {
     @apply rounded-(--radius-large) overflow-hidden bg-(--card-bg-transparent) backdrop-blur-sm transition-colors duration-150;
   }

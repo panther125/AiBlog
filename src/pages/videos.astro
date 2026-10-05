@@ -1,0 +1,481 @@
+---
+import { siteConfig } from "../config";
+import { videosData, getVideoCategories, getVideoEmbedUrl } from "../data/videos";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// 检查推荐视频页面是否启用
+if (!siteConfig.featurePages.videos) {
+	return Astro.redirect("/404/");
+}
+
+const categories = getVideoCategories();
+const title = "推荐视频";
+const subtitle = "那些值得反复看的 B 站视频";
+const first = videosData[0];
+---
+
+<MainGridLayout title={title} description={subtitle}>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<!-- 页面标题 -->
+			<div class="flex flex-col items-start justify-center mb-6">
+				<h1 class="text-4xl font-bold text-90 mb-2 relative
+					before:w-1 before:h-8 before:rounded-md before:bg-(--primary)
+					before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4">
+					推荐视频
+				</h1>
+				<p class="text-lg text-60">那些值得反复看的 B 站视频</p>
+			</div>
+
+			<!-- 播放器 -->
+			<div id="vd-stage" class="vd-stage rounded-(--radius-large) border border-(--line-divider) overflow-hidden bg-black/40">
+				<div id="vd-player" class="vd-player">
+					<!-- 未播放时显示封面占位，点任意视频后才真正加载 iframe -->
+					<div id="vd-poster" class="vd-poster" data-id={first.id}>
+						<img class="vd-poster-img" src={first.cover} alt={first.title} loading="eager" />
+						<div class="vd-poster-mask">
+							<div class="vd-play-btn" role="button" tabindex="0" aria-label="播放视频">
+								<iconify-icon icon="material-symbols:play-arrow-rounded" class="text-5xl"></iconify-icon>
+							</div>
+							<div class="vd-poster-meta">
+								<div id="vd-now-title" class="vd-now-title">{first.title}</div>
+								<div id="vd-now-desc" class="vd-now-desc">{first.desc || "点播放开始观看"}</div>
+							</div>
+						</div>
+					</div>
+					<iframe
+						id="vd-frame"
+						class="vd-frame"
+						src=""
+						scrolling="no"
+						frameborder="0"
+						framespacing="0"
+						allowfullscreen="true"
+						title="B站播放器"
+						data-empty="true"></iframe>
+				</div>
+				<div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-(--line-divider)">
+					<div class="flex items-center gap-2 min-w-0">
+						<iconify-icon icon="material-symbols:smart-display-outline" class="text-xl text-(--primary) shrink-0"></iconify-icon>
+						<span id="vd-status" class="text-sm text-60 truncate">
+							已选择：{first.title}（点卡片即可切换）
+						</span>
+					</div>
+					<div class="flex items-center gap-2 shrink-0">
+						<button id="vd-prev" class="vd-btn" title="上一个（←）">
+							<iconify-icon icon="material-symbols:skip-previous" class="text-lg"></iconify-icon>
+						</button>
+						<button id="vd-next" class="vd-btn" title="下一个（→）">
+							<iconify-icon icon="material-symbols:skip-next" class="text-lg"></iconify-icon>
+						</button>
+						<a id="vd-open" class="vd-btn" href={first.url} target="_blank" rel="noopener noreferrer" title="在 B 站打开">
+							<iconify-icon icon="material-symbols:open-in-new" class="text-lg"></iconify-icon>
+							在 B 站打开
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- 结果计数 + 分类筛选 -->
+			<div class="flex flex-wrap items-center justify-between gap-3 mt-6 mb-4 pl-1">
+				<div id="vd-count" class="text-sm text-60"></div>
+				<div id="vd-filters" class="flex flex-wrap gap-2">
+					<button data-cat="all" data-active="true" class="vd-chip">全部</button>
+					{
+						categories.map((c) => (
+							<button data-cat={c} data-active="false" class="vd-chip">
+								{c}
+							</button>
+						))
+					}
+				</div>
+			</div>
+
+			<!-- 视频卡片网格 -->
+			<div id="vd-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				{
+					videosData.map((v) => (
+						<div
+							class="vd-card group relative rounded-(--radius-large) border border-(--line-divider) bg-(--card-bg)
+								overflow-hidden hover:shadow-lg hover:border-(--primary) transition-all duration-300 cursor-pointer"
+							data-id={v.id}
+							data-cat={v.category}
+							data-src={getVideoEmbedUrl(v)}
+							data-title={v.title}
+							data-desc={v.desc}
+							data-url={v.url}
+							data-cover={v.cover}
+							role="button"
+							tabindex="0"
+							aria-label={"播放 " + v.title}
+						>
+							<div class="vd-thumb">
+								<img class="vd-thumb-img" src={v.cover} alt={v.title} loading="lazy" />
+								<div class="vd-thumb-mask">
+									<iconify-icon icon="material-symbols:play-circle-outline" class="text-4xl"></iconify-icon>
+								</div>
+								<span class="vd-badge">{v.category}</span>
+							</div>
+							<div class="p-4">
+								<h3 class="text-base font-semibold text-90 line-clamp-1 group-hover:text-(--primary) transition-colors">
+									{v.title}
+								</h3>
+								<p class="text-60 text-sm mt-1 line-clamp-2 leading-relaxed min-h-[2.5rem]">
+									{v.desc || "—— 值得一看"}
+								</p>
+							</div>
+							<span class="vd-playing">正在播放</span>
+						</div>
+					))
+				}
+			</div>
+
+			<p class="text-40 text-xs mt-6 pl-1">
+				视频均来自 B 站，版权归原作者所有；播放器为官方嵌入，不存储任何视频内容。
+			</p>
+		</div>
+	</div>
+</MainGridLayout>
+
+<style>
+	.vd-stage {
+		background: var(--card-bg);
+	}
+
+	.vd-player {
+		position: relative;
+		width: 100%;
+		height: 0;
+		padding-bottom: 56.25%;
+	}
+
+	.vd-player iframe,
+	.vd-player .vd-poster {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	/* 自有的显隐类：Astro scoped 样式特异性高于 Tailwind 的 .hidden */
+	.vd-frame {
+		display: none;
+		border: 0;
+	}
+
+	.vd-frame.vd-on {
+		display: block;
+	}
+
+	.vd-poster.vd-off {
+		display: none;
+	}
+
+	.vd-poster-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		opacity: 0.55;
+	}
+
+	.vd-poster-mask {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.75));
+		text-align: center;
+		padding: 1rem;
+	}
+
+	.vd-play-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 4.25rem;
+		height: 4.25rem;
+		border-radius: 999px;
+		background: var(--primary);
+		color: #fff;
+		cursor: pointer;
+		transition: transform 0.25s ease, box-shadow 0.25s ease;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+	}
+
+	.vd-play-btn:hover {
+		transform: scale(1.08);
+	}
+
+	.vd-now-title {
+		color: #fff;
+		font-size: 1.05rem;
+		font-weight: 700;
+		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+	}
+
+	.vd-now-desc {
+		color: rgba(255, 255, 255, 0.8);
+		font-size: 0.85rem;
+		margin-top: 0.25rem;
+	}
+
+	.vd-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.35rem 0.7rem;
+		border-radius: 999px;
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+		color: var(--text-color-60, #666);
+		font-size: 0.8rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		text-decoration: none;
+	}
+
+	.vd-btn:hover {
+		border-color: var(--primary);
+		color: var(--primary);
+	}
+
+	.vd-btn iconify-icon {
+		color: inherit;
+	}
+
+	.vd-chip {
+		padding: 0.3rem 0.85rem;
+		border-radius: 999px;
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+		font-size: 0.85rem;
+		color: var(--text-color-60, #666);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.vd-chip[data-active="true"] {
+		background: var(--primary);
+		border-color: var(--primary);
+		color: #fff;
+	}
+
+	.vd-thumb {
+		position: relative;
+		overflow: hidden;
+		height: 10rem;
+	}
+
+	.vd-thumb-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transform: scale(1);
+		transition: transform 0.35s ease;
+	}
+
+	.vd-card:hover .vd-thumb-img {
+		transform: scale(1.08);
+	}
+
+	.vd-thumb-mask {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #fff;
+		background: rgba(0, 0, 0, 0.35);
+		opacity: 0;
+		transition: opacity 0.25s ease;
+	}
+
+	.vd-card:hover .vd-thumb-mask,
+	.vd-card:focus-visible .vd-thumb-mask {
+		opacity: 1;
+	}
+
+	.vd-badge {
+		position: absolute;
+		top: 0.6rem;
+		left: 0.6rem;
+		padding: 0.15rem 0.55rem;
+		border-radius: 999px;
+		background: rgba(0, 0, 0, 0.55);
+		color: #fff;
+		font-size: 0.72rem;
+		backdrop-filter: blur(4px);
+	}
+
+	.vd-playing {
+		display: none;
+		position: absolute;
+		top: 0.6rem;
+		right: 0.6rem;
+		padding: 0.15rem 0.55rem;
+		border-radius: 999px;
+		background: var(--primary);
+		color: #fff;
+		font-size: 0.72rem;
+	}
+
+	.vd-card.vd-active {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 2px var(--primary);
+	}
+
+	.vd-card.vd-active .vd-playing {
+		display: block;
+	}
+
+	.vd-card.vd-hide {
+		display: none;
+	}
+</style>
+
+<script>
+	(function () {
+		var grid = document.getElementById("vd-grid");
+		var frame = document.getElementById("vd-frame");
+		var poster = document.getElementById("vd-poster");
+		var statusEl = document.getElementById("vd-status");
+		var openEl = document.getElementById("vd-open");
+		var countEl = document.getElementById("vd-count");
+		var filters = document.getElementById("vd-filters");
+		var nowTitle = document.getElementById("vd-now-title");
+		var nowDesc = document.getElementById("vd-now-desc");
+		if (!grid || !frame || !poster) return;
+
+		var cards = Array.prototype.slice.call(grid.querySelectorAll(".vd-card"));
+		var currentId = Number(poster.getAttribute("data-id") || 0);
+		var started = false;
+
+		function cardById(id) {
+			for (var i = 0; i < cards.length; i++) {
+				if (Number(cards[i].getAttribute("data-id")) === id) return cards[i];
+			}
+			return null;
+		}
+
+		function markActive(id) {
+			for (var i = 0; i < cards.length; i++) {
+				var c = cards[i];
+				if (Number(c.getAttribute("data-id")) === id) c.classList.add("vd-active");
+				else c.classList.remove("vd-active");
+			}
+		}
+
+		function play(id, autoStart) {
+			var card = cardById(id);
+			if (!card) return;
+			currentId = id;
+			var src = card.getAttribute("data-src") || "";
+			var title = card.getAttribute("data-title") || "";
+			var desc = card.getAttribute("data-desc") || "";
+			var url = card.getAttribute("data-url") || "#";
+
+			markActive(id);
+			if (nowTitle) nowTitle.textContent = title;
+			if (nowDesc) nowDesc.textContent = desc || "点播放开始观看";
+			if (statusEl) statusEl.textContent = "正在播放：" + title;
+			if (openEl) openEl.setAttribute("href", url);
+
+			var img = poster.querySelector(".vd-poster-img");
+			if (img) img.setAttribute("src", card.getAttribute("data-cover") || "");
+			poster.setAttribute("data-id", String(id));
+
+			if (autoStart) {
+				frame.setAttribute("src", src);
+				frame.classList.add("vd-on");
+				poster.classList.add("vd-off");
+				started = true;
+			}
+		}
+
+		// 点击卡片 / 海报：首次点击才真正加载播放器
+		cards.forEach(function (card) {
+			card.addEventListener("click", function () {
+				play(Number(card.getAttribute("data-id")), true);
+			});
+			card.addEventListener("keydown", function (e) {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					play(Number(card.getAttribute("data-id")), true);
+				}
+			});
+		});
+
+		var playBtn = poster.querySelector(".vd-play-btn");
+		if (playBtn) {
+			playBtn.addEventListener("click", function (e) {
+				e.stopPropagation();
+				play(Number(poster.getAttribute("data-id") || 0), true);
+			});
+		}
+		poster.addEventListener("click", function () {
+			play(Number(poster.getAttribute("data-id") || 0), true);
+		});
+
+		function step(delta) {
+			var visible = cards.filter(function (c) {
+				return !c.classList.contains("vd-hide");
+			});
+			if (!visible.length) return;
+			var idx = 0;
+			for (var i = 0; i < visible.length; i++) {
+				if (Number(visible[i].getAttribute("data-id")) === currentId) {
+					idx = i;
+					break;
+				}
+			}
+			var next = visible[(idx + delta + visible.length) % visible.length];
+			play(Number(next.getAttribute("data-id")), true);
+			var stage = document.getElementById("vd-stage");
+			if (stage && started) stage.scrollIntoView({ behavior: "smooth", block: "center" });
+		}
+
+		var prevBtn = document.getElementById("vd-prev");
+		var nextBtn = document.getElementById("vd-next");
+		if (prevBtn) prevBtn.addEventListener("click", function () { step(-1); });
+		if (nextBtn) nextBtn.addEventListener("click", function () { step(1); });
+
+		document.addEventListener("keydown", function (e) {
+			if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+			if (e.key === "ArrowLeft") step(-1);
+			else if (e.key === "ArrowRight") step(1);
+		});
+
+		// 分类筛选
+		function applyFilter(cat) {
+			var n = 0;
+			cards.forEach(function (c) {
+				var hit = cat === "all" || c.getAttribute("data-cat") === cat;
+				if (hit) {
+					c.classList.remove("vd-hide");
+					n++;
+				} else {
+					c.classList.add("vd-hide");
+				}
+			});
+			if (countEl) countEl.textContent = "共 " + n + " 个视频";
+		}
+
+		if (filters) {
+			filters.addEventListener("click", function (e) {
+				var btn = e.target && e.target.closest ? e.target.closest("[data-cat]") : null;
+				if (!btn) return;
+				var all = filters.querySelectorAll("[data-cat]");
+				for (var i = 0; i < all.length; i++) {
+					all[i].setAttribute("data-active", all[i] === btn ? "true" : "false");
+				}
+				applyFilter(btn.getAttribute("data-cat"));
+			});
+		}
+
+		play(currentId, false);
+		applyFilter("all");
+	})();
+</script>

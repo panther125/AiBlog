@@ -29,8 +29,6 @@ const EN: Record<I18nKeyType, string> = {
 	[I18nKey.anime]: "Anime",
 	[I18nKey.devices]: "Devices",
 	[I18nKey.projects]: "Projects",
-	[I18nKey.skills]: "Skills",
-	[I18nKey.timeline]: "Timeline",
 	[I18nKey.friends]: "Friends",
 
 	// Atom/RSS
@@ -72,30 +70,6 @@ const EN: Record<I18nKeyType, string> = {
 	[I18nKey.animeEmptyLocal]: "No local anime data found.",
 	[I18nKey.animeYear]: "Year",
 	[I18nKey.animeStudio]: "Studio",
-
-	// Timeline
-	[I18nKey.timelineStartDate]: "Start",
-	[I18nKey.timelineDuration]: "Duration",
-	[I18nKey.timelineEducation]: "Education",
-	[I18nKey.timelineWork]: "Work",
-	[I18nKey.timelineProject]: "Project",
-	[I18nKey.timelineAchievement]: "Achievement",
-	[I18nKey.timelineAchievements]: "Achievements",
-
-	// Skills
-	[I18nKey.skillLevelExpert]: "Expert",
-	[I18nKey.skillLevelAdvanced]: "Advanced",
-	[I18nKey.skillLevelIntermediate]: "Intermediate",
-	[I18nKey.skillLevelBeginner]: "Beginner",
-	[I18nKey.skillYears]: "{years} years",
-	[I18nKey.skillsExpert]: "Expert",
-	[I18nKey.skillsAdvanced]: "Advanced",
-	[I18nKey.skillsIntermediate]: "Intermediate",
-	[I18nKey.skillsBeginner]: "Beginner",
-	[I18nKey.skillsProjects]: "Projects",
-	[I18nKey.skillsByLevel]: "By level",
-	[I18nKey.skillsByCategory]: "By category",
-	[I18nKey.skillsTotal]: "Total",
 
 	// Projects
 	[I18nKey.projectsWeb]: "Web",

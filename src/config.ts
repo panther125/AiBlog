@@ -40,10 +40,10 @@ export const siteConfig: SiteConfig = {
 	featurePages: {
 		anime: false, // 番剧页面开关
 		projects: true, // 项目页面开关
-		skills: true, // 技能页面开关
-		timeline: true, // 时间线页面开关
 		devices: false, // 设备页面开关
 		bookmarks: true, // 链接收藏页面开关
+		videos: true, // 推荐视频页面开关
+		essays: true, // 即刻短文页面开关
 	},
 
 	// 顶栏标题配置
@@ -274,19 +274,19 @@ export const navBarConfig: NavBarConfig = {
 					icon: "material-symbols:work",
 				},
 				{
-					name: "技能展示",
-					url: "/skills/",
-					icon: "material-symbols:psychology",
-				},
-				{
-					name: "时间线",
-					url: "/timeline/",
-					icon: "material-symbols:timeline",
-				},
-				{
 					name: "链接收藏",
 					url: "/bookmarks/",
 					icon: "material-symbols:bookmarks",
+				},
+				{
+					name: "推荐视频",
+					url: "/videos/",
+					icon: "material-symbols:smart-display",
+				},
+				{
+					name: "即刻短文",
+					url: "/essays/",
+					icon: "material-symbols:sticky-note-2",
 				},
 			],
 		},

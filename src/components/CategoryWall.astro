@@ -1,0 +1,151 @@
+---
+/**
+ * 分类卡片墙
+ * 设计来源：旧博客首页的 categoryBar —— 带封面背景图、文章数、一句话描述的分类卡片网格
+ */
+import { getCategoryList, getSortedPosts } from "../utils/content-utils";
+import { getFileDirFromPath, getPostUrl } from "../utils/url-utils";
+import ImageWrapper from "./misc/ImageWrapper.astro";
+import { url } from "../utils/url-utils";
+
+const categories = await getCategoryList();
+const posts = await getSortedPosts();
+
+// 为每个分类挑一张封面（该分类下第一篇有封面的文章）和一句描述（最新一篇文章标题）
+const walls = categories
+	.map((c) => {
+		const name = c.name.trim();
+		const inCat = posts.filter((p) => (p.data.category || "").trim() === name);
+		const withCover = inCat.find((p) => !!p.data.image);
+		const latest = inCat[0];
+		return {
+			name,
+			count: c.count,
+			// getCategoryList 返回的 url 已经过 url() 处理，不要再套一层
+			href: c.url || url("/archive/"),
+			cover: withCover ? withCover.data.image : null,
+			coverBase: withCover
+				? getFileDirFromPath(withCover.filePath || "")
+				: "/",
+			desc: latest ? latest.data.title : "",
+		};
+	})
+	.sort((a, b) => b.count - a.count);
+---
+
+{
+	walls.length > 0 && (
+		<div class="card-base p-5 mb-4 onload-animation">
+			<div class="flex items-baseline justify-between mb-4">
+				<h2 class="text-lg font-bold text-90 flex items-center gap-2">
+					<iconify-icon icon="material-symbols:grid-view-rounded" class="text-(--primary) text-xl" />
+					分类
+				</h2>
+				<span class="text-xs text-50">共 {walls.length} 个分类</span>
+			</div>
+
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+				{
+					walls.map((c, i) => (
+						<a
+							href={c.href}
+							class="cat-card group relative block rounded-xl overflow-hidden h-28
+								border border-(--line-divider) hover:border-(--primary) transition-all duration-300"
+							aria-label={`查看分类 ${c.name} 下的 ${c.count} 篇文章`}
+						>
+							{c.cover ? (
+								<ImageWrapper
+									src={c.cover}
+									basePath={c.coverBase}
+									alt=""
+									class="cat-cover absolute inset-0 w-full h-full"
+									loading="lazy"
+								/>
+							) : (
+								<img
+									src="/assets/images/post-btn-bg.min.webp"
+									alt=""
+									loading="lazy"
+									class="cat-cover absolute inset-0 w-full h-full object-cover"
+									style={`filter: hue-rotate(${(i * 47) % 360}deg);`}
+								/>
+							)}
+							<div class="cat-mask absolute inset-0" />
+							<div class="relative z-10 flex flex-col justify-end h-full p-3">
+								<div class="flex items-center gap-2">
+									<span class="cat-name">{c.name}</span>
+									<span class="cat-count">{c.count}</span>
+								</div>
+								{c.desc && <span class="cat-desc">{c.desc}</span>}
+							</div>
+						</a>
+					))
+				}
+			</div>
+		</div>
+	)
+}
+
+<style>
+	.cat-cover {
+		transform: scale(1);
+		transition: transform 0.5s ease;
+	}
+
+	.cat-card:hover .cat-cover {
+		transform: scale(1.1);
+	}
+
+	.cat-mask {
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.75) 100%);
+		transition: background 0.3s ease;
+	}
+
+	.cat-card:hover .cat-mask {
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%);
+	}
+
+	.cat-name {
+		color: #fff;
+		font-size: 1.05rem;
+		font-weight: 700;
+		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+		transition: color 0.25s ease;
+	}
+
+	.cat-card:hover .cat-name {
+		color: var(--primary);
+	}
+
+	.cat-count {
+		display: inline-block;
+		min-width: 1.4rem;
+		padding: 0 0.4rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.22);
+		color: #fff;
+		font-size: 0.72rem;
+		line-height: 1.25rem;
+		text-align: center;
+		backdrop-filter: blur(4px);
+	}
+
+	.cat-desc {
+		margin-top: 0.15rem;
+		color: rgba(255, 255, 255, 0.78);
+		font-size: 0.75rem;
+		line-height: 1.3;
+		display: -webkit-box;
+		-webkit-line-clamp: 1;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cat-cover {
+			transition: none;
+			transform: none;
+		}
+	}
+</style>

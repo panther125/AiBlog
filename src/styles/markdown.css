@@ -1,8 +1,60 @@
 @reference "tailwindcss";
 
+/* 正文装饰色：沿用旧博客的彩虹渐变体系。
+   h2/h3 标题底部一条短横线（130deg 青→紫→粉），加粗文字用蓝紫渐变着色。
+   暗色下整体提亮，避免在深色背景上糊掉。 */
+:root {
+  --md-title-gradient: linear-gradient(130deg, #24c6dc, #5433ff 41.07%, #f09 76.05%);
+  --md-strong-gradient: linear-gradient(62deg, #188bfd, #a03bff);
+}
+
+:root.dark {
+  --md-title-gradient: linear-gradient(130deg, #4ddcee, #7d70ff 41.07%, #ff66c4 76.05%);
+  --md-strong-gradient: linear-gradient(62deg, #4da6ff, #c08bff);
+}
+
 .custom-md {
   h1 {
     @apply text-3xl;
+  }
+
+  /* --- 标题装饰：h2/h3 底部彩虹渐变短横线（借鉴旧博客 .post-html h2:after）。
+         只给这两级加，h4~h6 字号小，再挂横线会显得零碎 --- */
+  :is(h2, h3) {
+    @apply relative;
+    padding-bottom: 0.4rem;
+
+    &:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 4.5rem;
+      height: 0.25rem;
+      border-radius: 9999px;
+      background: var(--md-title-gradient);
+    }
+  }
+
+  /* --- 加粗：渐变着色（旧博客辨识度最高的细节之一） --- */
+  :where(strong, b) {
+    font-weight: bolder;
+
+    /* 只有在浏览器支持 background-clip:text 时才做渐变着色 ——
+       否则 -webkit-text-fill-color: transparent 会让文字彻底看不见 */
+    @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+      background-image: var(--md-strong-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+  }
+
+  /* --- 正文配图：圆角 + 淡阴影，和卡片同一套阴影变量 --- */
+  img {
+    @apply rounded-(--radius-large);
+    box-shadow: var(--card-shadow);
   }
 
   :is(h1, h2, h3, h4, h5, h6) {
